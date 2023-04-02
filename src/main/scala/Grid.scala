@@ -12,7 +12,12 @@ class Grid(val width: Int, val height: Int):
           .toArray
           .map( y => Square(this, GridPos(x, y)) ) )
     
-  //TODO collapsing
+  def collapseOne() =
+    val best  = currentGrid.flatten
+      .filter(_.tile.isEmpty)
+      .minByOption(_.entropy)
+
+    best.foreach( _.collapse() )
   
   def squareAt(gridPos: GridPos): Square =
     currentGrid(gridPos.x)(gridPos.y)
