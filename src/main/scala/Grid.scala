@@ -1,16 +1,22 @@
 import CompassDir.{East, North, South, West}
+import scala.collection.mutable.ArrayBuffer
 
 class Grid(val width: Int, val height: Int):
+
+  val size = (width, height)
+  
+  var numberOfRunways = 0
+  val runways = ArrayBuffer.empty[Runway]
 
   val currentGrid: Array[Array[Square]] =
     LazyList.iterate(0)(n => n + 1)
       .take(width)
       .toArray
-      .map( x =>
+      .map( y =>
         LazyList.iterate(0)(n => n + 1)
           .take(width)
           .toArray
-          .map( y => Square(this, GridPos(x, y)) ) )
+          .map( x => Square(this, GridPos(x, y)) ) )
     
   def collapseOne() =
     val best  = currentGrid.flatten
@@ -20,7 +26,7 @@ class Grid(val width: Int, val height: Int):
     best.foreach( _.collapse() )
   
   def squareAt(gridPos: GridPos): Square =
-    currentGrid(gridPos.x)(gridPos.y)
+    currentGrid(gridPos.y)(gridPos.x)
     
     
     
