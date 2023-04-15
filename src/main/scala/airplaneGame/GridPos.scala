@@ -1,6 +1,10 @@
+package airplaneGame
+
 import scala.collection.mutable.Buffer
 
 class GridPos(val x: Int, val y: Int):
+
+  override def toString: String = s"${x}, ${y}" 
 
   def neighborOption(direction: CompassDir, gridSize: (Int, Int)): Option[GridPos] =
     val neighborPos = GridPos(x + direction.xStep, y + direction.yStep)
@@ -19,3 +23,9 @@ class GridPos(val x: Int, val y: Int):
 
   def +(that: GridPos): GridPos = GridPos(this.x + that.x, this.y + that.y)
   def -(that: GridPos): GridPos = GridPos(this.x - that.x, this.y - that.y)
+  
+  def +(that: CompassDir): GridPos = GridPos(this.x + that.xStep, this.y + that.yStep)
+  def -(that: CompassDir): GridPos = GridPos(this.x - that.xStep, this.y - that.yStep)
+  
+  def toCoord(coordPerTile: Int): Coord =
+    Coord(x * coordPerTile + coordPerTile / 2, y * coordPerTile + coordPerTile / 2)

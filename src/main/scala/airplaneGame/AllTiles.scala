@@ -1,6 +1,8 @@
+package airplaneGame
+
 object AllTiles:
   
-  val allStrings = List("00000000", "00010000", "00010001", "00000001")  //for testing
+  val allStrings=List("00000000","00010000","00010001","00000001")  //for testing
   
   def ascii(str: String): String =
     str match
@@ -14,6 +16,3 @@ object AllTiles:
         "Runway end  "
       case "nothing" =>
         "nothing"
-
-
-  //TODO reading file names from source directory

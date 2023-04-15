@@ -1,3 +1,5 @@
+package airplaneGame
+
 import scala.math
 
 class test(var coord: (Int, Int)):

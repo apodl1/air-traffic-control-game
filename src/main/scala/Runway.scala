@@ -1,1 +1,0 @@
-class Runway(index: Int, start: GridPos, end: GridPos)
