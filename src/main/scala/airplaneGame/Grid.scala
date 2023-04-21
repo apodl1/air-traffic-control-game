@@ -4,7 +4,7 @@ import CompassDir.{East, North, South, West}
 import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
 
-class Grid(val width: Int, val height: Int, val bufferSize: Int, val coordPerTile: Int):
+class Grid(val width: Int, val height: Int, bufferSize: Int, val coordPerTile: Int):
 
   val size = (width, height)
   val coordSize = (width * coordPerTile, height * coordPerTile)
@@ -24,6 +24,8 @@ class Grid(val width: Int, val height: Int, val bufferSize: Int, val coordPerTil
           .toVector
           .map( x => Square(this, GridPos(x, y)) ) )
 
+  def renderable: Vector[String] =
+    currentGrid.flatten.map( n => n.tile.getOrElse("grounddd") )
   
   def squareAt(gridPos: GridPos): Square =
     currentGrid(gridPos.y)(gridPos.x)
@@ -31,26 +33,39 @@ class Grid(val width: Int, val height: Int, val bufferSize: Int, val coordPerTil
   def squareAt(x: Int, y: Int): Square =
     currentGrid(y)(x)
 
+  def nextNSquares(startPos: GridPos, direction: CompassDir, n: Int): Vector[Square] =
+    LazyList.iterate(startPos + direction)( _ + direction).take(n).map( n => squareAt(n) ).toVector
+
+
+  def generate(runways: Int, terminalSize: (Int, Int), runwayLengths: Vector[Int]): Unit =
+    placeTerminal(terminalSize._1, terminalSize._2)
+    (1 to runways).foreach(n =>
+      if Random.nextInt(2) == 0 then
+        placeRunwayHorizontal(runwayLengths(Random.nextInt(runwayLengths.length)))
+      else
+        val possibleLengths = runwayLengths.filter( _ <= height - bufferSize * 2 )
+        placeRunwayVertical(possibleLengths(Random.nextInt(possibleLengths.length))))
+
 
   def placeTerminal(terminalWidth: Int, terminalHeight: Int): Unit = //called first
     require(terminalWidth > 2 && terminalHeight > 2)
-    val xPos = Random.nextInt(width - (bufferSize - 1) * 2 - terminalWidth) + bufferSize - 1
-    val yPos = Random.nextInt(height - (bufferSize - 1) * 2 - terminalHeight) + bufferSize - 1
+    val xPos = Random.nextInt(width - (bufferSize - 2) * 2 - terminalWidth) + bufferSize - 1
+    val yPos = Random.nextInt(height - (bufferSize - 2) * 2 - terminalHeight) + bufferSize - 1
     val NW = GridPos(xPos, yPos)
-    squareAt(NW).tile = Some("terminalNW")
-    nextNSquares(NW, East, terminalWidth - 2).foreach( n => { n.tile = Some("terminalN"); gates.append(Gate(numberOfGates, n.loc)) } )
-    nextNSquares(NW, South, terminalHeight - 2).foreach( n => n.tile = Some("terminalW") )
+    squareAt(NW).tile = Some("terminNW")
+    nextNSquares(NW, East, terminalWidth - 2).foreach( n => { n.tile = Some("terminaN"); gates.append(Gate(numberOfGates, n.loc)) } )
+    nextNSquares(NW, South, terminalHeight - 2).foreach( n => n.tile = Some("terminaW") )
     val NE = GridPos(xPos + terminalWidth - 1, yPos)
-    squareAt(NE).tile = Some("terminalNE")
-    nextNSquares(NE, South, terminalHeight - 2).foreach( n => n.tile = Some("terminalE") )
+    squareAt(NE).tile = Some("terminNE")
+    nextNSquares(NE, South, terminalHeight - 2).foreach( n => n.tile = Some("terminaE") )
     val SW = GridPos(xPos, yPos + terminalHeight - 1)
-    squareAt(SW).tile = Some("terminalSW")
-    nextNSquares(SW, East, terminalWidth - 2).foreach( n => n.tile = Some("terminalS") )
+    squareAt(SW).tile = Some("terminSW")
+    nextNSquares(SW, East, terminalWidth - 2).foreach( n => n.tile = Some("terminaS") )
     val SE = GridPos(xPos + terminalWidth - 1, yPos + terminalHeight - 1)
-    squareAt(SE).tile = Some("terminalSE")
+    squareAt(SE).tile = Some("terminSE")
     
   def placeRunwayHorizontal(length: Int): Unit = //calledSecond
-    require(length > 3)
+    require(length > 2)
     val xPos = Random.nextInt(width - bufferSize * 2 - length) + bufferSize
     val yPos = Random.nextInt(height - bufferSize * 2) + bufferSize
     val edge1 = GridPos(xPos, yPos)
@@ -62,49 +77,53 @@ class Grid(val width: Int, val height: Int, val bufferSize: Int, val coordPerTil
       || !nextNSquares(edge1 + South - East, East, length + 1).forall( _.tile.isEmpty ) then
       placeRunwayHorizontal(length)
     else
-      squareAt(edge1).tile = Some("runwayHStart")
-      nextNSquares(edge1, East, length - 2).foreach( _.tile = Some("runwayH") )
+      squareAt(edge1).tile = Some("runwaHSE")
+      nextNSquares(edge1, East, length - 2).foreach( _.tile = Some("runwayHH") )
       val edge2 = GridPos(xPos + length - 1, yPos)
-      squareAt(edge2).tile = Some("runwayHEnd")
-      if Random.nextInt(1) == 0 then
+      squareAt(edge2).tile = Some("runwaHEE")
+      if Random.nextInt(2) == 0 then
         runways.append(Runway(numberOfRunways, edge1, edge2))
       else
         runways.append(Runway(numberOfRunways, edge2, edge1))
+      squareAt(edge1).tile = Some("runwaHEW")
+      squareAt(edge2).tile = Some("runwaHSW")
+
 
   def placeRunwayVertical(length: Int): Unit = //calledSecond
-    require(length > 3)
+    require(length > 2)
     val xPos = Random.nextInt(width - bufferSize * 2) + bufferSize
     val yPos = Random.nextInt(height - bufferSize * 2 - length) + bufferSize
     val edge1 = GridPos(xPos, yPos)
     //println(nextNSquares(edge1, East, length - 1).map( _.tile.getOrElse("") ).mkString(","))
     if squareAt(edge1).tile.isDefined
-      || !nextNSquares(edge1, South, length + 1).forall( n => n.tile.isEmpty || n.tile.getOrElse("").contains("runwayH") )
+      || !nextNSquares(edge1, South, length + 1).forall( n => n.tile.isEmpty || n.tile.getOrElse("").contains("runwayHH") )
       || !nextNSquares(edge1, North, 2).forall( _.tile.isEmpty )
-      || !nextNSquares(edge1 + East - South, South, length + 1).forall( n => n.tile.isEmpty || n.tile.getOrElse("").contains("runwayH") )
-      || !nextNSquares(edge1 + West - South, South, length + 1).forall( n => n.tile.isEmpty || n.tile.getOrElse("").contains("runwayH") ) then
+      || !nextNSquares(edge1 + East - South, South, length + 1).forall( n => n.tile.isEmpty || n.tile.getOrElse("").contains("runwayHH") )
+      || !nextNSquares(edge1 + West - South, South, length + 1).forall( n => n.tile.isEmpty || n.tile.getOrElse("").contains("runwayHH") ) then
       placeRunwayVertical(length)
     else
-      squareAt(edge1).tile = Some("runwayVStart")
-      nextNSquares(edge1, South, length - 2).foreach( n => if n.tile.isEmpty then n.tile = Some("runwayV") else n.tile = Some("runwayVH"))
+      squareAt(edge1).tile = Some("runwaVSS")
+      nextNSquares(edge1, South, length - 2).foreach( n => if n.tile.isEmpty then n.tile = Some("runwayVV") else n.tile = Some("runwayVH"))
       val edge2 = GridPos(xPos, yPos + length - 1)
-      squareAt(edge2).tile = Some("runwayVEnd")
-      if Random.nextInt(1) == 0 then
+      squareAt(edge2).tile = Some("runwaVES")
+      if Random.nextInt(2) == 0 then
         runways.append(Runway(numberOfRunways, edge1, edge2))
       else
         runways.append(Runway(numberOfRunways, edge2, edge1))
+        squareAt(edge1).tile = Some("runwaVEN")
+        squareAt(edge2).tile = Some("runwaVSN")
 
-  def nextNSquares(startPos: GridPos, direction: CompassDir, n: Int): Vector[Square] =
-    LazyList.iterate(startPos + direction)( _ + direction).take(n).map( n => squareAt(n) ).toVector
 
-enum CompassDir(val xStep: Int, val yStep: Int) derives CanEqual:
 
-  case North extends CompassDir( 0,-1)
+enum CompassDir(val xStep: Int, val yStep: Int, val bearing: Int) derives CanEqual:
 
-  case East  extends CompassDir( 1, 0)
+  case North extends CompassDir( 0,-1, 0)
 
-  case South extends CompassDir( 0, 1)
+  case East  extends CompassDir( 1, 0, 90)
 
-  case West  extends CompassDir(-1, 0)
+  case South extends CompassDir( 0, 1, 180)
+
+  case West  extends CompassDir(-1, 0, 270)
 
 
 

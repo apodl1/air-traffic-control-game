@@ -1,18 +1,18 @@
 package airplaneGame
 
-object AllTiles:
+import java.awt.Image
+import java.io.File
+import javax.imageio.ImageIO
+import javax.swing.ImageIcon
+
+object AllTiles: //depreceated
   
-  val allStrings=List("00000000","00010000","00010001","00000001")  //for testing
-  
-  def ascii(str: String): String =
-    str match
-      case "00000000" =>
-        "ground      "
-      case "00010000" =>
-        "Runway start"
-      case "00010001" =>
-        "Runway      "
-      case "00000001" =>
-        "Runway end  "
-      case "nothing" =>
-        "nothing"
+  def readScaledImage(filename: String): ImageIcon =
+    ImageIcon(ImageIO.read(File("./Tiles/" + filename)).getScaledInstance(AirplaneGame.coordPerGridPos, AirplaneGame.coordPerGridPos, Image.SCALE_DEFAULT))
+    
+  val filenames = File("./Tiles").list
+    
+  def stripEnding(s: String) = s.takeWhile(_ != '.')
+    
+  lazy val allStrings    = filenames.map(stripEnding(_))
+  lazy val images        = filenames.map(name => (stripEnding(name), readScaledImage(name))).toMap

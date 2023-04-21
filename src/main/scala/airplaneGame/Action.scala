@@ -1,5 +1,7 @@
 package airplaneGame
 
+import scala.util.Random
+
 
 trait Action(plane: Airplane):
   
@@ -13,7 +15,27 @@ class GoingToRunway(plane: Airplane, runway: Runway) extends Action(plane):
   def onRunway: Boolean =
     plane.location == target
 
-  def execute() = ???
+  def execute() =
+    println(s"Plane ${plane.id}, at ${plane.location}")
+    plane.fuel -= 0.2
+    if math.abs(plane.location.x - target.x) < 5 && math.abs(plane.location.y - target.y) < 5 then
+      plane.location = target
+      plane.action = Landing(plane, runway)
+      plane.bearing = Degrees(runway.direction.bearing)
+      return
+    val bearingToTargetDiff: Int = plane.location.bearingTo(target) - plane.bearing.value
+    val toTurn = (plane.maxTurn * (bearingToTargetDiff.toDouble / 180)).ceil.toInt
+    if bearingToTargetDiff > 0 && bearingToTargetDiff < 180 then
+      plane.bearing += toTurn
+    else
+    if bearingToTargetDiff <= 180 && plane.location.bearingTo(target) < plane.bearing.value then
+      plane.bearing -= toTurn
+    else if bearingToTargetDiff <= 180 && plane.location.bearingTo(target) > plane.bearing.value then
+      plane.bearing += toTurn
+    else if bearingToTargetDiff > 180 && plane.location.bearingTo(target) > plane.bearing.value then
+      plane.bearing -= toTurn
+    else if bearingToTargetDiff > 180 && plane.location.bearingTo(target) < plane.bearing.value then
+      plane.bearing += toTurn
 
 
 class CirclingLeft(plane: Airplane) extends Action(plane):
@@ -55,7 +77,7 @@ class Landing(plane: Airplane, runway: Runway) extends Action(plane):
     else if hasLanded then
       plane.action = TaxiingToGate(plane)
     if plane.speed > neededSpeed then
-      plane.speed = math.max(1, plane.speed - originalSpeed / (plane.neededRunway * plane.game.coordPerTile))
+      plane.speed = math.max(1, plane.speed - ((originalSpeed - 1) / plane.neededRunway)  * plane.game.coordPerTile )
 
 
 class TakingOff(plane: Airplane, runway: Runway) extends Action(plane):
@@ -81,7 +103,10 @@ class TakingOff(plane: Airplane, runway: Runway) extends Action(plane):
 
 class Crashed(plane: Airplane) extends Action(plane):
 
+  var crashedFor = 0
+
   def execute() =
+    crashedFor += 1
     if plane.speed != 0 then
       plane.speed = math.max(0, plane.speed - 1)
 
@@ -128,3 +153,20 @@ class TaxiingToRunway(plane: Airplane, runway: Runway) extends Action(plane):
       onRunway = true
     else
       timer += 1
+
+
+class Arriving(plane: Airplane) extends Action(plane):
+
+  var toArrive = 15
+
+  def execute() =
+    println(s"Plane ${plane.id}, arriving in $toArrive")
+    if toArrive == 0 then
+      plane.action = GoingToRunway(plane, plane.game.grid.runways(Random.nextInt(plane.game.grid.numberOfRunways)))
+      plane.location = Coord(Random.nextInt(plane.game.width * plane.game.coordPerTile), 0) //TODO fix
+      val indexInArriving =
+        plane.game.airplanesToArrive.zipWithIndex.filter( _._1.id == plane.id ).head._2
+      plane.game.airplanesToArrive.remove(indexInArriving)
+      plane.game.airplanesOnMap.append(plane)
+    else
+      toArrive -= 1

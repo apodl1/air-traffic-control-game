@@ -3,25 +3,25 @@ package airplaneGame
 import scala.util.Random
 import scala.math
 
-class Airplane(val game: GameState, id: Int, coordSize: (Int, Int)):
+class Airplane(val game: GameState, val id: Int):
 
-  val maxTurn = 2
-  val neededRunway = 5
+  val maxTurn = 8
+  val neededRunway = 3
   val maxFuel = 600
   
-  var location: Coord = Coord(Random.nextInt(coordSize._1), Random.nextInt(coordSize._2))
-  var bearing: Int = 90 //TODO replace with full
-  var speed: Double = 10 //TODO adjust
+  var location: Coord = Coord(0, 0)
+  var bearing: Degrees = Degrees(180) //TODO replace with full
+  var speed: Double = 3 //TODO adjust
   var fuel: Double = maxFuel / 3 //fuel managemen in actions  TODO adjust
   
 
   val origin: String = "Helsinki" //TODO replace with full
   var crashed: Boolean = false
 
-  var action: Action = ???
+  var action: Action = Arriving(this)
 
-  def move() =
-    location = location + Coord((speed * math.sin(bearing.toDouble.toRadians)).toInt, (speed * math.cos(bearing.toDouble.toRadians)).toInt)
+  def move() = //called by game-state on every tick
+    location = location + Coord((speed * math.sin(bearing.value.toDouble.toRadians)).toInt, -(speed * math.cos(bearing.value.toDouble.toRadians)).toInt)
 
   def slowSpeed() =
     speed = 5
