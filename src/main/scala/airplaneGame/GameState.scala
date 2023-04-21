@@ -22,4 +22,4 @@ class GameState(val width: Int, val height: Int, val bufferSize: Int, val coordP
 
     if sinceNewAirplane == 10 then
       airplanesToArrive.append(Airplane(this, planeIndexes))
-      //sinceNewAirplane = 0
+      sinceNewAirplane = 0

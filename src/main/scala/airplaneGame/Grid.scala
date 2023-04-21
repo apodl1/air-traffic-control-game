@@ -16,7 +16,7 @@ class Grid(val width: Int, val height: Int, bufferSize: Int, val coordPerTile: I
 
   val currentGrid: Vector[Vector[Square]] =
     LazyList.iterate(0)(n => n + 1)
-      .take(width)
+      .take(height)
       .toVector
       .map( y =>
         LazyList.iterate(0)(n => n + 1)
@@ -97,6 +97,7 @@ class Grid(val width: Int, val height: Int, bufferSize: Int, val coordPerTile: I
     //println(nextNSquares(edge1, East, length - 1).map( _.tile.getOrElse("") ).mkString(","))
     if squareAt(edge1).tile.isDefined
       || !nextNSquares(edge1, South, length + 1).forall( n => n.tile.isEmpty || n.tile.getOrElse("").contains("runwayHH") )
+      || !nextNSquares(edge1 + GridPos(0, length - 2), South, 2).forall( _.tile.isEmpty )
       || !nextNSquares(edge1, North, 2).forall( _.tile.isEmpty )
       || !nextNSquares(edge1 + East - South, South, length + 1).forall( n => n.tile.isEmpty || n.tile.getOrElse("").contains("runwayHH") )
       || !nextNSquares(edge1 + West - South, South, length + 1).forall( n => n.tile.isEmpty || n.tile.getOrElse("").contains("runwayHH") ) then
