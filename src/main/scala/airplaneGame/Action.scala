@@ -67,20 +67,16 @@ class Landing(plane: Airplane, runway: Runway) extends Action(plane):
   val neededSpeed = 1
   val originalSpeed = plane.speed
 
-  def hasLanded: Boolean =
-    plane.speed == neededSpeed && 15 > math.abs(plane.location.x - runway.end.toCoord(plane.game.coordPerTile).x + (plane.location.y - runway.end.toCoord(plane.game.coordPerTile).y))
-
-  def hasCrashed: Boolean =
-    plane.location == runway.end.toCoord(plane.game.coordPerTile) && !hasLanded
+  def atEndOfRunway = 15 > math.abs(plane.location.x - runway.end.toCoord(plane.game.coordPerTile).x + (plane.location.y - runway.end.toCoord(plane.game.coordPerTile).y))
 
   def execute() =
-    if hasCrashed then
-      plane.crashed = true
-    else if hasLanded then
+    if plane.speed == neededSpeed && atEndOfRunway then
       plane.action = TaxiingToGate(plane)
       plane.speed = 0
+    else if atEndOfRunway then
+      plane.action = Crashed(plane)
     if plane.speed > neededSpeed then
-      plane.speed = math.max(1, plane.speed - ((originalSpeed - 1) / plane.neededRunway)  * plane.game.coordPerTile )
+      plane.speed = math.max(1, plane.speed - ((originalSpeed / plane.neededRunway) / (plane.game.coordPerTile * plane.speed) ) )
 
 
 class TakingOff(plane: Airplane, runway: Runway) extends Action(plane):
@@ -109,9 +105,15 @@ class Crashed(plane: Airplane) extends Action(plane):
   var crashedFor = 0
 
   def execute() =
+    if crashedFor == 0 then
+      plane.game.airplanesOnMap.remove(plane.game.airplanesOnMap.zipWithIndex.filter( _._1.id == plane.id ).head._2)
+      plane.game.crashedPlanes.enqueue(plane)
     crashedFor += 1
     if plane.speed != 0 then
-      plane.speed = math.max(0, plane.speed - 1)
+      plane.speed = math.max(0, plane.speed - 0.2)
+    if crashedFor > 40 then
+      plane.game.crashedPlanes.dequeue()
+      println(plane.game.crashedPlanes.length)
 
 
 

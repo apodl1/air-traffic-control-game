@@ -24,13 +24,13 @@ class Airplane(val game: GameState, val id: Int):
     location = location + Coord((speed * math.sin(bearing.value.toDouble.toRadians)).toInt, -(speed * math.cos(bearing.value.toDouble.toRadians)).toInt)
 
   def slowSpeed() =
-    speed = 5
+    speed = 2
 
   def cruiseSpeed() =
-    speed = 10
+    speed = 3
   
   def fastSpeed() =
-    speed = 15
+    speed = 4
   
 
 //TODO implimentetions

@@ -1,6 +1,7 @@
 package airplaneGame
 
-import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable
+import scala.collection.mutable.{ArrayBuffer, Queue}
 
 class GameState(val width: Int, val height: Int, val bufferSize: Int, val coordPerTile: Int):  //placeholder class
   
@@ -8,6 +9,7 @@ class GameState(val width: Int, val height: Int, val bufferSize: Int, val coordP
   var planeIndexes = 0
   val airplanesOnMap = ArrayBuffer.empty[Airplane]
   val airplanesToArrive = ArrayBuffer.empty[Airplane]
+  val crashedPlanes = Queue.empty[Airplane]
 
   var clock = 0
 
@@ -17,7 +19,7 @@ class GameState(val width: Int, val height: Int, val bufferSize: Int, val coordP
     clock += 1
     sinceNewAirplane += 1
 
-    (airplanesToArrive ++ airplanesOnMap).foreach( _.action.execute() )
+    (airplanesToArrive ++ airplanesOnMap ++ crashedPlanes).foreach( _.action.execute() )
     airplanesOnMap.foreach( _.move() )
 
     if sinceNewAirplane == 10 && airplanesOnMap.length < 2 then
