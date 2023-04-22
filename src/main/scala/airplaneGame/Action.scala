@@ -16,9 +16,11 @@ class GoingToRunway(plane: Airplane, runway: Runway) extends Action(plane):
     plane.location == target
 
   def execute() =
-    println(s"Plane ${plane.id}, at ${plane.location}")
+    //println(s"Plane ${plane.id}, at ${plane.location}")
+    //plane.game.grid.runways.foreach( n => println(n.start.toCoord(plane.game.coordPerTile)) )
+    //println("Target:" + target)
     plane.fuel -= 0.2
-    if math.abs(plane.location.x - target.x) < 5 && math.abs(plane.location.y - target.y) < 5 then
+    if math.abs(plane.location.x - target.x) < 15 && math.abs(plane.location.y - target.y) < 15 then
       plane.location = target
       plane.action = Landing(plane, runway)
       plane.bearing = Degrees(runway.direction.bearing)
@@ -66,7 +68,7 @@ class Landing(plane: Airplane, runway: Runway) extends Action(plane):
   val originalSpeed = plane.speed
 
   def hasLanded: Boolean =
-    plane.speed == neededSpeed && plane.location == runway.end.toCoord(plane.game.coordPerTile)
+    plane.speed == neededSpeed && 15 > math.abs(plane.location.x - runway.end.toCoord(plane.game.coordPerTile).x + (plane.location.y - runway.end.toCoord(plane.game.coordPerTile).y))
 
   def hasCrashed: Boolean =
     plane.location == runway.end.toCoord(plane.game.coordPerTile) && !hasLanded
@@ -76,6 +78,7 @@ class Landing(plane: Airplane, runway: Runway) extends Action(plane):
       plane.crashed = true
     else if hasLanded then
       plane.action = TaxiingToGate(plane)
+      plane.speed = 0
     if plane.speed > neededSpeed then
       plane.speed = math.max(1, plane.speed - ((originalSpeed - 1) / plane.neededRunway)  * plane.game.coordPerTile )
 
@@ -117,12 +120,23 @@ class TaxiingToGate(plane: Airplane) extends Action(plane):
   val timeToTaxi = 150
   var timer = 0
   var taxiing = false
+  var gate: Option[Gate] = None
+
+  def initTaxi() =
+    plane.speed = 0
+    plane.location = Coord(-100, -100)
 
   def execute() =
     if !taxiing && !plane.game.grid.gates.forall( _.plane.isDefined ) then
-      plane.game.grid.gates.filter( _.plane.isEmpty ).head.plane = Some(plane)
+      val gateToAssign = plane.game.grid.gates.filter( _.plane.isEmpty ).head
+      gateToAssign.plane = Some(plane)
+      gate = Some(gateToAssign)
+      initTaxi()
+      taxiing = true
     if timer == timeToTaxi then
       plane.action = Boarding(plane)
+      plane.location = gate.get.loc.toCoord(plane.game.coordPerTile)
+      plane.bearing = Degrees(0)
     else if taxiing then
       timer += 1
 
@@ -160,7 +174,7 @@ class Arriving(plane: Airplane) extends Action(plane):
   var toArrive = 15
 
   def execute() =
-    println(s"Plane ${plane.id}, arriving in $toArrive")
+    //println(s"Plane ${plane.id}, arriving in $toArrive")
     if toArrive == 0 then
       plane.action = GoingToRunway(plane, plane.game.grid.runways(Random.nextInt(plane.game.grid.numberOfRunways)))
       plane.location = Coord(Random.nextInt(plane.game.width * plane.game.coordPerTile), 0) //TODO fix

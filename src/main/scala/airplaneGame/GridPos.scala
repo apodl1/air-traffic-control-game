@@ -27,5 +27,8 @@ class GridPos(val x: Int, val y: Int):
   def +(that: CompassDir): GridPos = GridPos(this.x + that.xStep, this.y + that.yStep)
   def -(that: CompassDir): GridPos = GridPos(this.x - that.xStep, this.y - that.yStep)
   
+  def isSameAs(that: GridPos): Boolean =
+    this.x == that.x && this.y == that.y
+  
   def toCoord(coordPerTile: Int): Coord =
     Coord(x * coordPerTile + coordPerTile / 2, y * coordPerTile + coordPerTile / 2)

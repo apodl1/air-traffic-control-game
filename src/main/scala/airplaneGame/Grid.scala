@@ -85,8 +85,8 @@ class Grid(val width: Int, val height: Int, bufferSize: Int, val coordPerTile: I
         runways.append(Runway(numberOfRunways, edge1, edge2))
       else
         runways.append(Runway(numberOfRunways, edge2, edge1))
-      squareAt(edge1).tile = Some("runwaHEW")
-      squareAt(edge2).tile = Some("runwaHSW")
+        squareAt(edge1).tile = Some("runwaHEW")
+        squareAt(edge2).tile = Some("runwaHSW")
 
 
   def placeRunwayVertical(length: Int): Unit = //calledSecond

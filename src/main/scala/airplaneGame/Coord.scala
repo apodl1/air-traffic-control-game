@@ -4,7 +4,7 @@ import scala.math
 
 class Coord(val x: Int, val y: Int):
 
-  override def toString: String = s"${x}, ${y}"
+  override def toString: String = s"(${x}, ${y})"
 
   def toGridPos(coordPerTile: Int): GridPos =
     GridPos(x / coordPerTile, y / coordPerTile)
