@@ -76,7 +76,7 @@ class Landing(plane: Airplane, runway: Runway) extends Action(plane):
     else if atEndOfRunway then
       plane.action = Crashed(plane)
     if plane.speed > neededSpeed then
-      plane.speed = math.max(1, plane.speed - ((originalSpeed / plane.neededRunway) / (plane.game.coordPerTile * plane.speed) ) )
+      plane.speed = math.max(1, plane.speed - ((4.0 * 4 / (2 * plane.neededRunway * plane.game.coordPerTile))))
 
 
 class TakingOff(plane: Airplane, runway: Runway) extends Action(plane):
