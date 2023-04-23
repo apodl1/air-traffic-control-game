@@ -17,8 +17,8 @@ class PlaneTextToDisplay(maybePlane: Option[Airplane]):
       "Currently selected: plane #" + plane.id +
       "\nLocation: " + plane.location +
       "\nBearing: " + plane.bearing +
-      "\nSpeed: " + plane.speed +
-      "\nFuel: " + plane.fuel.floor +
+      "\nSpeed: " + math.BigDecimal(plane.speed).setScale(2, BigDecimal.RoundingMode.HALF_UP).toDouble +
+      "\nFuel: " + plane.fuelToDisplay +
       "\nOrigin: " + plane.origin +
       "\nNeeded runway: " + plane.neededRunway +
       "\nAction: " + plane.action

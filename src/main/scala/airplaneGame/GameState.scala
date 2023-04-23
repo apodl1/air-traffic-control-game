@@ -20,7 +20,8 @@ class GameState(val width: Int, val height: Int, val bufferSize: Int, val coordP
     sinceNewAirplane += 1
 
     (airplanesToArrive ++ airplanesOnMap ++ crashedPlanes).foreach( _.action.execute() )
-    airplanesOnMap.foreach( _.move() )
+    (airplanesOnMap ++ crashedPlanes).foreach( _.move() )
+    airplanesOnMap.filter( _.fuel < 0 ).foreach( n => n.action = Crashed(n) )
 
     if sinceNewAirplane == 10 && airplanesOnMap.length < 2 then
       planeIndexes += 1

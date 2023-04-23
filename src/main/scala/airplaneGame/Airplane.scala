@@ -6,13 +6,14 @@ import scala.math
 class Airplane(val game: GameState, val id: Int):
 
   val maxTurn = 8
-  val neededRunway = 3
+  val neededRunway = 6
   val maxFuel = 600
   
   var location: Coord = Coord(0, 0)
-  var bearing: Degrees = Degrees(180) //TODO replace with full
+  var bearing: Degrees = Degrees(180)
   var speed: Double = 3 //TODO adjust
   var fuel: Double = maxFuel / 3 //fuel managemen in actions  TODO adjust
+  def fuelToDisplay = fuel.floor
   
 
   val origin: String = "Helsinki" //TODO replace with full
@@ -24,7 +25,7 @@ class Airplane(val game: GameState, val id: Int):
     location = location + Coord((speed * math.sin(bearing.value.toDouble.toRadians)).toInt, -(speed * math.cos(bearing.value.toDouble.toRadians)).toInt)
 
   def slowSpeed() =
-    speed = 2
+    speed = 2.5
 
   def cruiseSpeed() =
     speed = 3

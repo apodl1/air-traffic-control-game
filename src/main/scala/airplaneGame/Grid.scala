@@ -78,9 +78,11 @@ class Grid(val width: Int, val height: Int, bufferSize: Int, val coordPerTile: I
       placeRunwayHorizontal(length)
     else
       squareAt(edge1).tile = Some("runwaHSE")
+      squareAt(edge1 + North).tile = Some("waitPlaceSH")
       nextNSquares(edge1, East, length - 2).foreach( _.tile = Some("runwayHH") )
       val edge2 = GridPos(xPos + length - 1, yPos)
       squareAt(edge2).tile = Some("runwaHEE")
+      squareAt(edge2 + North).tile = Some("waitPlaceEH")
       if Random.nextInt(2) == 0 then
         runways.append(Runway(numberOfRunways, edge1, edge2))
       else
@@ -104,9 +106,11 @@ class Grid(val width: Int, val height: Int, bufferSize: Int, val coordPerTile: I
       placeRunwayVertical(length)
     else
       squareAt(edge1).tile = Some("runwaVSS")
+      squareAt(edge1 + East).tile = Some("waitPlaceSV")
       nextNSquares(edge1, South, length - 2).foreach( n => if n.tile.isEmpty then n.tile = Some("runwayVV") else n.tile = Some("runwayVH"))
       val edge2 = GridPos(xPos, yPos + length - 1)
       squareAt(edge2).tile = Some("runwaVES")
+      squareAt(edge2 + East).tile = Some("waitPlaceEV")
       if Random.nextInt(2) == 0 then
         runways.append(Runway(numberOfRunways, edge1, edge2))
       else

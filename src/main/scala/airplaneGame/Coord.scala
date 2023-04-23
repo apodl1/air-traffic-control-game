@@ -18,11 +18,11 @@ class Coord(val x: Int, val y: Int):
       360 - math.atan((x - target.x).toDouble / (y - target.y)).toDegrees.toInt
     else if x > target.x && y < target.y then
       180 + math.atan((x - target.x).toDouble / math.abs(y - target.y)).toDegrees.toInt
-    else if x == 0 && y > target.y then
+    else if x == target.x && y > target.y then
       0
-    else if x == 0 && y < target.y then
+    else if x == target.x && y < target.y then
       180
-    else if x < target.x && y == 0 then
+    else if x < target.x then
       90
     else
       270

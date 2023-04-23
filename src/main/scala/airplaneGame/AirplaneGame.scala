@@ -7,12 +7,13 @@ import java.awt.image.BufferedImage
 import java.io.File
 import javax.imageio.ImageIO
 import javax.swing.ImageIcon
-import java.awt.Color.RED
+import java.awt.Color.{RED, GREEN}
 import java.awt.geom.{Ellipse2D, Rectangle2D}
 
 
 object AirplaneGame extends SimpleSwingApplication:
 
+  //contants
   val gridSizeX = 18
   val gridSizeY = 18
   val bufferSize = 3
@@ -26,7 +27,6 @@ object AirplaneGame extends SimpleSwingApplication:
 
 
   val game: GameState = GameState(gridSizeX, gridSizeY, bufferSize, coordPerGridPos)
-
   game.grid.generate(numberOfRunways, terminalSize, runwayLengths)
 
   //game.grid.runways.foreach( n => println(n.start) )
@@ -37,13 +37,14 @@ object AirplaneGame extends SimpleSwingApplication:
       .map( tile => new Label{icon = AllTiles.images(tile)} )
       .foreach( contents += _ )*/
 
-
   val gridImage: BufferedImage = BufferedImage(gridSizeX * coordPerGridPos, gridSizeY * coordPerGridPos, BufferedImage.TYPE_INT_ARGB)
   val gridImageG = gridImage.getGraphics.asInstanceOf[Graphics2D]
   game.grid.currentGrid.zipWithIndex.foreach( y =>
     y._1.zipWithIndex.foreach( x =>
       gridImageG.drawImage(ImageIO.read(File("./Tiles/" + x._1.tile.getOrElse("grounddd") + ".png"))
         .getScaledInstance(AirplaneGame.coordPerGridPos, AirplaneGame.coordPerGridPos, Image.SCALE_DEFAULT), x._2 * coordPerGridPos, y._2 * coordPerGridPos, null) ) )
+  gridImageG.setColor(GREEN)
+  game.grid.runways.foreach( n => gridImageG.drawString("#" + n.index, (n.start - n.direction).toCoord(coordPerGridPos).x, (n.start - n.direction).toCoord(coordPerGridPos).y) )
   gridImageG.dispose()
 
   def getNewGridImage: BufferedImage =
@@ -70,13 +71,11 @@ object AirplaneGame extends SimpleSwingApplication:
   def drawPlanes(): Unit =
       planesOnMap = getNewGridImage
       val g = planesOnMap.getGraphics.asInstanceOf[Graphics2D]
-      game.airplanesOnMap.foreach( n => g.drawImage(getTurnedPlane(n.bearing.value), n.location.x, n.location.y, null) )
+      game.airplanesOnMap.foreach( n => g.drawImage(getTurnedPlane(n.bearing.value), n.location.x - planeSize._1 / 2, n.location.y - planeSize._2 / 2, null) )
       game.crashedPlanes.foreach( n => g.drawImage(crashedImage, n.location.x, n.location.y, null) )
-      //g.drawImage(planeImage, 100, 100, 20, 20, null)
       g.setColor(RED)
-      val runway = game.grid.runways.head.start
-      //println("Runway: "+ runway.toCoord(coordPerGridPos))
-      g.draw(Ellipse2D.Double(runway.x * coordPerGridPos, runway.y * coordPerGridPos, 10, 10))
+      selectedPlane.foreach( n => g.draw(Ellipse2D.Double(n.location.x - planeSize._1 / 2 - 5, n.location.y - planeSize._2 / 2 - 5, 40, 40)) )
+      //g.drawImage(planeImage, 100, 100, 20, 20, null)
       g.dispose()
   end drawPlanes
 
@@ -94,6 +93,17 @@ object AirplaneGame extends SimpleSwingApplication:
 
   var mouseX = 0
   var mouseY = 0
+
+  val flyingActions: Vector[String] = Vector("GoingToRunway", "CirclingLeft", "CirclingRight")
+
+  def isFlyingAction(actionName: String): Boolean =
+    flyingActions.exists(n => actionName.contains( n ) )
+  def isLanding(plane: Airplane): Boolean =
+    plane.action.getClass.getTypeName.contains("Landing")
+  def isBoarded(plane: Airplane): Boolean =
+    plane.action.getClass.getTypeName.contains("Boarded")
+  def waitingForTakeoff(plane: Airplane): Boolean =
+    plane.action.getClass.getTypeName.contains("WaitingOnRunway")
 
   val mapPanel = new Panel:
     preferredSize = new Dimension(gridSizeX * coordPerGridPos, gridSizeY * coordPerGridPos)
@@ -116,7 +126,7 @@ object AirplaneGame extends SimpleSwingApplication:
           selectedPlane = None
         else if possibleRunway.isEmpty then
           possiblePlane.foreach( n => selectedPlane = Some(n))
-        else
+        else if selectedPlane.forall( n => isFlyingAction(n.action.getClass.getTypeName) ) then //weakness
           selectedPlane.foreach( _.action = GoingToRunway(selectedPlane.get, possibleRunway.get) )
         planeInfo.text = PlaneTextToDisplay(selectedPlane).text
     }
@@ -134,20 +144,103 @@ object AirplaneGame extends SimpleSwingApplication:
     maximumSize = buttonDim
     action = new Action("Fast speed"):
       def apply() = (selectedPlane.foreach( _.fastSpeed() ))
+  val cirleLeftButton = new Button("Circle left"):
+    maximumSize = buttonDim
+    action = new Action("Circle left"):
+      def apply() = (selectedPlane.foreach( n => n.action = CirclingLeft(n) ))
+  val cirleRightButton = new Button("Circle right"):
+    maximumSize = buttonDim
+    action = new Action("Circle right"):
+      def apply() = (selectedPlane.foreach( n => n.action = CirclingRight(n) ))
+  val expediteButton = new Button("Expedite off runway"):
+    maximumSize = buttonDim
+    action = new Action("Expedite off runway"):
+      def apply() = (selectedPlane.foreach( n => n.action = Expediting(n) ))
+  def toRunwayButton(runway: Runway) = new Button("Taxi to runway #" + runway.index):
+    maximumSize = buttonDim
+    action = new Action("Taxi to runway #" + runway.index):
+      def apply() = (selectedPlane.foreach( n => n.action = TaxiingToRunway(n, runway) ))
+  val takeOffButton = new Button("Take off"):
+    maximumSize = buttonDim
+    action = new Action("Take off"):
+      def apply() = (selectedPlane.foreach( n => n.action = TakingOff(n, game.grid.runways.filter( m => m.airplanesWaitingForTakeoff.contains(n) ).head) )) //sometimes breaks
 
   var rightPanel = new BoxPanel(Orientation.Vertical):
     preferredSize = new Dimension(150, gridSizeY * coordPerGridPos)
     contents += planeInfo
-    contents += Swing.VStrut(10)
-    contents += new BorderPanel:
-      add(slowButton, BorderPanel.Position.West)
-    contents += Swing.VStrut(10)
-    contents += new BorderPanel:
-      add(cruiseButton, BorderPanel.Position.West)
-    contents += Swing.VStrut(10)
-        contents += new BorderPanel:
-      add(fastButton, BorderPanel.Position.West)
-    contents += Swing.VStrut(10)
+
+  def updateRightPanel() =
+    rightPanel.contents.clear()
+    rightPanel.contents += planeInfo
+    if selectedPlane.isDefined then
+      val plane = selectedPlane.get
+      if isFlyingAction(plane.action.getClass.getTypeName) then
+        rightPanel.contents += new BorderPanel:
+          add(slowButton, BorderPanel.Position.West)
+        rightPanel.contents += Swing.VStrut(10)
+        rightPanel.contents += new BorderPanel:
+          add(cruiseButton, BorderPanel.Position.West)
+        rightPanel.contents += Swing.VStrut(10)
+        rightPanel.contents += new BorderPanel:
+          add(fastButton, BorderPanel.Position.West)
+        rightPanel.contents += Swing.VStrut(20)
+        rightPanel.contents += new BorderPanel:
+          add(cirleLeftButton, BorderPanel.Position.West)
+        rightPanel.contents += Swing.VStrut(10)
+        rightPanel.contents += new BorderPanel:
+          add(cirleRightButton, BorderPanel.Position.West)
+        rightPanel.contents += Swing.VStrut(10)
+      if isLanding(plane) then
+        rightPanel.contents += new BorderPanel:
+          add(expediteButton, BorderPanel.Position.West)
+        rightPanel.contents += Swing.VStrut(10)
+      if isBoarded(plane) then
+        game.grid.runways.foreach( runway => {
+          rightPanel.contents += new BorderPanel:
+            add(toRunwayButton(runway), BorderPanel.Position.West)
+          rightPanel.contents += Swing.VStrut(10) })
+      if waitingForTakeoff(plane) then
+        rightPanel.contents += new BorderPanel:
+          add(takeOffButton, BorderPanel.Position.West)
+        rightPanel.contents += Swing.VStrut(10)
+
+
+
+  val mapTextPanel = new BoxPanel(Orientation.Horizontal):
+    contents += mapPanel
+    contents += rightPanel
+
+
+  def tick(): Unit =
+    game.tick()
+    drawPlanes()
+    mapPanel.repaint()
+    updateRightPanel()
+    rightPanel.repaint()
+    planeInfo.text = PlaneTextToDisplay(selectedPlane).text
+    //println("" + mouseX + "," + mouseY)
+
+
+  def top = new MainFrame:
+    title = "Air Traffic Controller"
+
+    javax.swing.Timer(200, e => tick()).start()
+
+    contents = mapTextPanel
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   /*var textPanel = new BoxPanel(Orientation.Vertical):
     preferredSize = new Dimension(100, gridSizeY * coordPerGridPos)
@@ -171,23 +264,3 @@ object AirplaneGame extends SimpleSwingApplication:
       textPanel.contents += new Label("Origin: " + plane.origin)
       textPanel.contents += new Label("Needed runway: " + plane.neededRunway)
       textPanel.contents += new Label("Action: " + plane.action)*/
-
-  val mapTextPanel = new BoxPanel(Orientation.Horizontal):
-    contents += mapPanel
-    contents += rightPanel
-
-
-  def tick(): Unit =
-    game.tick()
-    drawPlanes()
-    mapPanel.repaint()
-    planeInfo.text = PlaneTextToDisplay(selectedPlane).text
-    //println("" + mouseX + "," + mouseY)
-
-
-  def top = new MainFrame:
-    title = "Air Traffic Controller"
-
-    javax.swing.Timer(200, e => tick()).start()
-
-    contents = mapTextPanel
