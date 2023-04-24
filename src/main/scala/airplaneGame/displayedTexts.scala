@@ -15,11 +15,13 @@ class PlaneTextToDisplay(maybePlane: Option[Airplane]):
     else
       val plane = maybePlane.get
       "Currently selected: plane #" + plane.id +
+      "\nModel: " + plane.model +
       "\nLocation: " + plane.location +
       "\nBearing: " + plane.bearing +
       "\nSpeed: " + math.BigDecimal(plane.speed).setScale(2, BigDecimal.RoundingMode.HALF_UP).toDouble +
       "\nFuel: " + plane.fuelToDisplay +
       "\nOrigin: " + plane.origin +
+      "\nPassengers: " + plane.passengers +
       "\nNeeded runway: " + plane.neededRunway +
       "\nAction: " + plane.action
 
@@ -27,6 +29,7 @@ class ArrivingPlaneMessage(plane: Airplane):
 
   val message: String =
     "Plane #" + plane.id + ", from: " + plane.origin +
+    "\nModel:" + plane.model
     "\nPassengers: " + plane.passengers +
     "\nTime to arrival: 15" +
     "\nFuel on arrival: " + plane.fuel +
@@ -46,5 +49,9 @@ class AirportInfo(game: GameState):
   val text: String =
     game.grid.runways.map( n => "Runway #" + n.index + ": Available").mkString("\n") + "\n\n" +
     game.grid.gates.map( n => "Gate #" + n.index + ": " + gateStatus(n)).mkString("\n") +
-    "\n\nScore:" + game.score + "\n" +
+    "\n\nScore: " + game.score + "\n" +
     game.latestScoreMessage
+
+
+val smallOrigins = Vector("Helsinki", "Lappeenranta", "Takapajula", "Paris", "Budapest", "London", "Tallin", "Amsterdam", "Oslo", "Tripoli", "Korvatunturi")
+val bigOrigins = Vector("Paris", "Budapest", "London", "New York", "Chicago", "Tokyo", "Singapore", "Los Angeles", "Metropolis", "Moon", "Buenos Aires", "Bogota", "Lagos", "Cairo", "Sydney")

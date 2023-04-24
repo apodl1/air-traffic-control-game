@@ -57,23 +57,30 @@ object AirplaneGame extends SimpleSwingApplication:
     newGridImage
 
 
-  val planeImage = ImageIO.read(new File("Tiles/Plane.png")).getScaledInstance(planeSize._1, planeSize._2, java.awt.Image.SCALE_REPLICATE)
+  val smallPlaneImage = ImageIO.read(new File("Tiles/smallPlane.png")).getScaledInstance(planeSize._1, planeSize._2, java.awt.Image.SCALE_REPLICATE)
+  val mediumPlaneImage = ImageIO.read(new File("Tiles/mediumPlane.png")).getScaledInstance(planeSize._1, planeSize._2, java.awt.Image.SCALE_REPLICATE)
+  val bigPlaneImage = ImageIO.read(new File("Tiles/bigPlane.png")).getScaledInstance(planeSize._1, planeSize._2, java.awt.Image.SCALE_REPLICATE)
   val crashedImage = ImageIO.read(new File("Tiles/Crashed.png")).getScaledInstance(planeSize._1, planeSize._2, java.awt.Image.SCALE_REPLICATE)
   //planeImage.getGraphics.asInstanceOf[Graphics2D].scale(10, 10)
   var planesOnMap: BufferedImage = gridImage
 
-  def getTurnedPlane(bearing: Int): BufferedImage =
+  def getTurnedPlane(bearing: Int, model: String): BufferedImage =
     val newPlaneImage: BufferedImage = BufferedImage(planeSize._1, planeSize._2, BufferedImage.TYPE_INT_ARGB)
     val newPlaneImageG = newPlaneImage.getGraphics.asInstanceOf[Graphics2D]
     newPlaneImageG.rotate(bearing.toDouble.toRadians - 90.toRadians, planeSize._1 / 2, planeSize._2 / 2)
-    newPlaneImageG.drawImage(planeImage, 0, 0, null)
+    if model == "Airbus 330" then
+      newPlaneImageG.drawImage(smallPlaneImage, 0, 0, null)
+    else if model == "Boeing 737-800" then
+      newPlaneImageG.drawImage(mediumPlaneImage, 0, 0, null)
+    else if model == "Boeing 777X" then
+      newPlaneImageG.drawImage(bigPlaneImage, 0, 0, null)
     newPlaneImageG.dispose()
     newPlaneImage
 
   def drawPlanes(): Unit =
       planesOnMap = getNewGridImage
       val g = planesOnMap.getGraphics.asInstanceOf[Graphics2D]
-      game.airplanesOnMap.foreach( n => g.drawImage(getTurnedPlane(n.bearing.value), n.location.x - planeSize._1 / 2, n.location.y - planeSize._2 / 2, null) )
+      game.airplanesOnMap.foreach( n => g.drawImage(getTurnedPlane(n.bearing.value, n.model), n.location.x - planeSize._1 / 2, n.location.y - planeSize._2 / 2, null) )
       game.crashedPlanes.foreach( n => g.drawImage(crashedImage, n.location.x, n.location.y, null) )
       g.setColor(RED)
       selectedPlane.foreach( n => g.draw(Ellipse2D.Double(n.location.x - planeSize._1 / 2 - 5, n.location.y - planeSize._2 / 2 - 5, 40, 40)) )

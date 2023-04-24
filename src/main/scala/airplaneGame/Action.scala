@@ -1,6 +1,7 @@
 package airplaneGame
 
 import scala.util.Random
+import airplaneGame.CompassDir
 
 
 
@@ -39,27 +40,37 @@ class Arriving(plane: Airplane) extends Action(plane): //puts plane on map
 
 class GoingToRunway(plane: Airplane, runway: Runway) extends Action(plane):
   private val runwayStart: Coord = runway.start.toCoord(coordPerTile)
-  private val entryPoint: Coord = (runway.start - runway.direction - runway.direction).toCoord(coordPerTile)
-  private val orientationPoint: Coord = (runway.start - runway.direction - runway.direction + runway.parallelDirection + runway.parallelDirection).toCoord(coordPerTile)
-  private val initalTarget: Coord =
-    if math.abs(plane.location.bearingTo(runwayStart) - plane.bearing.value) < 90 then
-      entryPoint
-    else
-      orientationPoint
   private var oriented = false
   private var clearedForEntry = false
+  private val entryPoint: Coord = (runway.start - runway.direction - runway.direction).toCoord(coordPerTile)
+
+  def orientationPoint: Coord =
+    if runway.isHorizontal then
+      if plane.location.y < runwayStart.y * coordPerTile then
+        (entryPoint.toGridPos(coordPerTile) - runway.direction - runway.direction - GridPos(0, 2)).toCoord(coordPerTile)
+      else
+        (entryPoint.toGridPos(coordPerTile) - runway.direction - runway.direction + GridPos(0, 2)).toCoord(coordPerTile)
+    else
+      if plane.location.x < runwayStart.x * coordPerTile then
+        (entryPoint.toGridPos(coordPerTile) - runway.direction - runway.direction - GridPos(2, 0)).toCoord(coordPerTile)
+      else
+        (entryPoint.toGridPos(coordPerTile) - runway.direction - runway.direction + GridPos(2, 0)).toCoord(coordPerTile)
 
   def conditionToOrient: Boolean =
-    math.abs(plane.location.x - orientationPoint.x) < 15 && math.abs(plane.location.y - orientationPoint.y) < 15
+    plane.location.toGridPos(coordPerTile).isSameAs(orientationPoint.toGridPos(coordPerTile))
 
   def conditionToEntry: Boolean =
     math.abs(plane.location.x - entryPoint.x) < 15 && math.abs(plane.location.y - entryPoint.y) < 15
+
+  def bearingToDiff(target: Coord) = math.abs(plane.location.bearingTo(target) - plane.bearing.value)
+
+  def onCoord(coord: Coord): Boolean = math.abs(plane.location.x - coord.x) < 15 && math.abs(plane.location.y - coord.y) < 15
 
   override def toString: String = "Going to Runway #" + runway.index
 
   def goToPoint(target: Coord) =
     val bearingToTarget = plane.location.bearingTo(target)
-    val bearingToTargetDiff: Int = math.abs(plane.location.bearingTo(target) - plane.bearing.value)
+    val bearingToTargetDiff: Int = bearingToDiff(target)
     //how much to turn algo:
     val toTurn =
       if bearingToTargetDiff <= 180 then
@@ -78,13 +89,21 @@ class GoingToRunway(plane: Airplane, runway: Runway) extends Action(plane):
   def execute() =
     plane.fuel -= 0.2
     //if on target:
-    if math.abs(plane.location.x - runwayStart.x) < 15 && math.abs(plane.location.y - runwayStart.y) < 15 then
-      plane.location = runwayStart
+    if onCoord(runwayStart) && bearingToDiff(runwayStart) < 30 && clearedForEntry then
+      if runway.isHorizontal then
+        plane.location = Coord(plane.location.x, runwayStart.y)
+      else
+        plane.location = Coord(runwayStart.x, plane.location.y)
       plane.action = Landing(plane, runway)
       plane.bearing = Degrees(runway.direction.bearing)
+    else if onCoord(runwayStart) && clearedForEntry then
+      println("reseted")
+      clearedForEntry = false
+      oriented = false
     else if clearedForEntry then
       goToPoint(runwayStart)
     else if conditionToEntry && oriented then
+      println("cleared for entry")
       clearedForEntry = true
       goToPoint(runwayStart)
     else if oriented then
@@ -93,20 +112,7 @@ class GoingToRunway(plane: Airplane, runway: Runway) extends Action(plane):
       oriented = true
       goToPoint(entryPoint)
     else
-      goToPoint(initalTarget)
-
-
-    /*if bearingToTargetDiff > 0 && bearingToTargetDiff < 180 then
-      plane.bearing += toTurn
-    else
-    if bearingToTargetDiff <= 180 && plane.location.bearingTo(target) < plane.bearing.value then
-      plane.bearing -= toTurn
-    else if bearingToTargetDiff <= 180 && plane.location.bearingTo(target) > plane.bearing.value then
-      plane.bearing += toTurn
-    else if bearingToTargetDiff > 180 && plane.location.bearingTo(target) > plane.bearing.value then
-      plane.bearing -= toTurn
-    else if bearingToTargetDiff > 180 && plane.location.bearingTo(target) < plane.bearing.value then
-      plane.bearing += toTurn */
+      goToPoint(orientationPoint)
 
 
 class CirclingLeft(plane: Airplane) extends Action(plane):

@@ -1,7 +1,7 @@
 package airplaneGame
 
-import scala.collection.mutable
 import scala.collection.mutable.{ArrayBuffer, Queue}
+import scala.util.Random
 
 class GameState(val width: Int, val height: Int, val bufferSize: Int, val coordPerTile: Int):  //placeholder class
   
@@ -37,7 +37,14 @@ class GameState(val width: Int, val height: Int, val bufferSize: Int, val coordP
 
     if sinceNewAirplane == 10 && airplanesOnMap.length < 2 then
       planeIndexes += 1
-      val plane = Airplane(this, planeIndexes)
+      val plane =
+        val random = Random.nextInt(3)
+        if random == 0 then
+          SmallPlane(this, planeIndexes)
+        if random == 1 then
+          MediumPlane(this, planeIndexes)
+        else
+          BigPlane(this, planeIndexes)
       airplanesToArrive.append(plane)
       newArrivalMessage(ArrivingPlaneMessage(plane).message)
       sinceNewAirplane = 0

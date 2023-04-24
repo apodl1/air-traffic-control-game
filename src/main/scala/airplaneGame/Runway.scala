@@ -15,6 +15,8 @@ class Runway(val index: Int, val start: GridPos, val end: GridPos):
     else
       North
       
+  val isHorizontal = direction == East || direction == West
+      
   val parallelDirection =
     if start.x > end.x then
       North

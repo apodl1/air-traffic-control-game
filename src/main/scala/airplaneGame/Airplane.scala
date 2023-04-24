@@ -3,22 +3,21 @@ package airplaneGame
 import scala.util.Random
 import scala.math
 
-class Airplane(val game: GameState, val id: Int):
+trait Airplane(val game: GameState, val id: Int):
 
-  val maxTurn = 8
-  val neededRunway = 6
-  val maxFuel = 600
+  val model: String
+  val maxTurn: Int
+  val neededRunway: Int
+  val maxFuel: Double
+  var fuel: Double
+  val origin: String
+  val passengers: Int
   
   var location: Coord = Coord(0, 0)
   var bearing: Degrees = Degrees(180)
   var speed: Double = 3 //TODO adjust
-  var fuel: Double = maxFuel / 3 //fuel managemen in actions  TODO adjust
-  def fuelToDisplay = fuel.floor
-  
 
-  val origin: String = "Helsinki" //TODO replace with full
-  val passengers: String = "200" //TODO replace with full
-  var crashed: Boolean = false
+  def fuelToDisplay = fuel.floor
 
   var action: Action = Arriving(this)
 
@@ -33,6 +32,34 @@ class Airplane(val game: GameState, val id: Int):
   
   def fastSpeed() =
     speed = 4
-  
 
-//TODO implimentetions
+
+
+class SmallPlane(game: GameState, id: Int) extends Airplane(game, id):
+  val model = "Airbus 330"
+  val maxTurn = 10
+  val neededRunway = 3
+  val maxFuel = 250.0
+  var fuel: Double =  maxFuel //fuel managemen in actions
+  val origin = smallOrigins(Random.nextInt(smallOrigins.length))
+  val passengers = Random.nextInt(140) + 30
+
+
+class MediumPlane(game: GameState, id: Int) extends Airplane(game, id):
+  val model = "Boeing 737-800"
+  val maxTurn = 10
+  val neededRunway = 4
+  val maxFuel = 300.0
+  var fuel: Double =  maxFuel //fuel managemen in actions
+  val origin = (smallOrigins ++ bigOrigins)(Random.nextInt(smallOrigins.length + bigOrigins.length))
+  val passengers = Random.nextInt(120) + 100
+
+
+class BigPlane(game: GameState, id: Int) extends Airplane(game, id):
+  val model = "Boeing 777X"
+  val maxTurn = 8
+  val neededRunway = 6
+  val maxFuel = 400.0
+  var fuel: Double =  maxFuel //fuel managemen in actions
+  val origin = bigOrigins(Random.nextInt(bigOrigins.length))
+  val passengers = Random.nextInt(170) + 250
