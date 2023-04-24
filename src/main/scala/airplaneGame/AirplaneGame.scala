@@ -9,6 +9,8 @@ import javax.imageio.ImageIO
 import javax.swing.ImageIcon
 import java.awt.Color.{RED, GREEN}
 import java.awt.geom.{Ellipse2D, Rectangle2D}
+import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global
 
 
 object AirplaneGame extends SimpleSwingApplication:
@@ -20,7 +22,7 @@ object AirplaneGame extends SimpleSwingApplication:
   val coordPerGridPos = 40
 
   val numberOfRunways = 2
-  val terminalSize = (5, 5)
+  val terminalSize = (6, 5)
   val runwayLengths = Vector(5, 6)
 
   val planeSize = (30, 30)
@@ -75,6 +77,7 @@ object AirplaneGame extends SimpleSwingApplication:
       game.crashedPlanes.foreach( n => g.drawImage(crashedImage, n.location.x, n.location.y, null) )
       g.setColor(RED)
       selectedPlane.foreach( n => g.draw(Ellipse2D.Double(n.location.x - planeSize._1 / 2 - 5, n.location.y - planeSize._2 / 2 - 5, 40, 40)) )
+      selectedPlane.foreach( n => g.draw(Ellipse2D.Double(n.location.x - planeSize._1 / 2 - 5, n.location.y - planeSize._2 / 2 - 5, 40, 40)) )
       //g.drawImage(planeImage, 100, 100, 20, 20, null)
       g.dispose()
   end drawPlanes
@@ -82,28 +85,8 @@ object AirplaneGame extends SimpleSwingApplication:
 
   var selectedPlane: Option[Airplane] = None
 
-  val planeInfo = new TextArea(15, 100):
-    maximumSize = new Dimension(150, 300)
-    editable = false
-    wordWrap = true
-    lineWrap = true
-
-  planeInfo.text = PlaneTextToDisplay(None).text
-
-
   var mouseX = 0
   var mouseY = 0
-
-  val flyingActions: Vector[String] = Vector("GoingToRunway", "CirclingLeft", "CirclingRight")
-
-  def isFlyingAction(actionName: String): Boolean =
-    flyingActions.exists(n => actionName.contains( n ) )
-  def isLanding(plane: Airplane): Boolean =
-    plane.action.getClass.getTypeName.contains("Landing")
-  def isBoarded(plane: Airplane): Boolean =
-    plane.action.getClass.getTypeName.contains("Boarded")
-  def waitingForTakeoff(plane: Airplane): Boolean =
-    plane.action.getClass.getTypeName.contains("WaitingOnRunway")
 
   val mapPanel = new Panel:
     preferredSize = new Dimension(gridSizeX * coordPerGridPos, gridSizeY * coordPerGridPos)
@@ -130,6 +113,8 @@ object AirplaneGame extends SimpleSwingApplication:
           selectedPlane.foreach( _.action = GoingToRunway(selectedPlane.get, possibleRunway.get) )
         planeInfo.text = PlaneTextToDisplay(selectedPlane).text
     }
+  end mapPanel
+
 
   val buttonDim = Dimension(30, 10)
   val slowButton = new Button("Slow speed"):
@@ -163,11 +148,33 @@ object AirplaneGame extends SimpleSwingApplication:
   val takeOffButton = new Button("Take off"):
     maximumSize = buttonDim
     action = new Action("Take off"):
-      def apply() = (selectedPlane.foreach( n => n.action = TakingOff(n, game.grid.runways.filter( m => m.airplanesWaitingForTakeoff.contains(n) ).head) )) //sometimes breaks
+      def apply() =
+        (selectedPlane.foreach( n => n.action = TakingOff(n, game.grid.runways.filter( m => m.airplanesWaitingForTakeoff.contains(n) ).head) ))
+
+
+  val planeInfo = new TextArea(15, 100):
+    maximumSize = new Dimension(150, 300)
+    editable = false
+    wordWrap = true
+    lineWrap = true
+
+  planeInfo.text = PlaneTextToDisplay(None).text
 
   var rightPanel = new BoxPanel(Orientation.Vertical):
     preferredSize = new Dimension(150, gridSizeY * coordPerGridPos)
     contents += planeInfo
+
+  val flyingActions: Vector[String] = Vector("GoingToRunway", "CirclingLeft", "CirclingRight")
+
+  def isFlyingAction(actionName: String): Boolean =
+    flyingActions.exists(n => actionName.contains( n ) )
+  def isLanding(plane: Airplane): Boolean =
+    plane.action.getClass.getTypeName.contains("Landing")
+  def isBoarded(plane: Airplane): Boolean =
+    plane.action.getClass.getTypeName.contains("Boarded")
+  def waitingForTakeoff(plane: Airplane): Boolean =
+    plane.action.getClass.getTypeName.contains("WaitingOnRunway")
+
 
   def updateRightPanel() =
     rightPanel.contents.clear()
@@ -203,30 +210,68 @@ object AirplaneGame extends SimpleSwingApplication:
         rightPanel.contents += new BorderPanel:
           add(takeOffButton, BorderPanel.Position.West)
         rightPanel.contents += Swing.VStrut(10)
+  end updateRightPanel
 
 
+  val arrivingInfo = new TextArea(15, 100):
+    maximumSize = new Dimension(150, 300)
+    editable = false
+    wordWrap = true
+    lineWrap = true
 
-  val mapTextPanel = new BoxPanel(Orientation.Horizontal):
+  arrivingInfo.text = game.arrivingMessages.mkString("\n")
+
+  val airportInfo = new TextArea(15, 100):
+    maximumSize = new Dimension(150, 300)
+    editable = false
+    wordWrap = true
+    lineWrap = true
+
+  airportInfo.text = AirportInfo(game).text
+
+  def updateLeftPanel() =
+    arrivingInfo.text = game.arrivingMessages.mkString("\n")
+    airportInfo.text = AirportInfo(game).text
+
+  var leftPanel = new BoxPanel(Orientation.Vertical):
+    preferredSize = new Dimension(150, gridSizeY * coordPerGridPos)
+    contents += arrivingInfo
+    contents += Swing.VStrut(10)
+    contents += airportInfo
+
+  val combinationPanel = new BoxPanel(Orientation.Horizontal):
+    contents += leftPanel
     contents += mapPanel
     contents += rightPanel
 
 
   def tick(): Unit =
     game.tick()
-    drawPlanes()
-    mapPanel.repaint()
-    updateRightPanel()
-    rightPanel.repaint()
-    planeInfo.text = PlaneTextToDisplay(selectedPlane).text
+    Future {
+      drawPlanes()
+      updateRightPanel() }
+      .onComplete { _ =>
+        Swing.onEDT {
+          mapPanel.repaint()
+          //rightPanel.repaint()
+          planeInfo.text = PlaneTextToDisplay(selectedPlane).text }}
     //println("" + mouseX + "," + mouseY)
 
+  def slowerTick(): Unit =
+    Future {
+      updateLeftPanel() }
+      .onComplete { _ =>
+        Swing.onEDT {
+          //leftPanel.repaint()
+          }}
 
   def top = new MainFrame:
     title = "Air Traffic Controller"
 
     javax.swing.Timer(200, e => tick()).start()
+    javax.swing.Timer(1000, e => slowerTick()).start()
 
-    contents = mapTextPanel
+    contents = combinationPanel
 
 
 

@@ -6,14 +6,26 @@ import scala.collection.mutable.{ArrayBuffer, Queue}
 class GameState(val width: Int, val height: Int, val bufferSize: Int, val coordPerTile: Int):  //placeholder class
   
   val grid = Grid(width, height, bufferSize, coordPerTile)
-  var planeIndexes = 0
+  private var planeIndexes = 0
   val airplanesOnMap = ArrayBuffer.empty[Airplane]
   val airplanesToArrive = ArrayBuffer.empty[Airplane]
   val crashedPlanes = Queue.empty[Airplane]
+  val arrivingMessages = Queue.empty[String]
+  var score = 0
+  var latestScoreMessage = ""
 
-  var clock = 0
+  def newScore(message: String, points: Int) =
+    score += points
+    latestScoreMessage = message + "\nPoints awarded: " + points + "!\n"
 
-  var sinceNewAirplane = 0
+  def newArrivalMessage(message: String) =
+    arrivingMessages.enqueue(message)
+    if arrivingMessages.length > 3 then
+      arrivingMessages.dequeue()
+
+  private var clock = 0
+
+  private var sinceNewAirplane = 0
 
   def tick(): Unit =
     clock += 1
@@ -25,7 +37,9 @@ class GameState(val width: Int, val height: Int, val bufferSize: Int, val coordP
 
     if sinceNewAirplane == 10 && airplanesOnMap.length < 2 then
       planeIndexes += 1
-      airplanesToArrive.append(Airplane(this, planeIndexes))
+      val plane = Airplane(this, planeIndexes)
+      airplanesToArrive.append(plane)
+      newArrivalMessage(ArrivingPlaneMessage(plane).message)
       sinceNewAirplane = 0
   end tick
 

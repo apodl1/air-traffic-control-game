@@ -17,6 +17,7 @@ class Airplane(val game: GameState, val id: Int):
   
 
   val origin: String = "Helsinki" //TODO replace with full
+  val passengers: String = "200" //TODO replace with full
   var crashed: Boolean = false
 
   var action: Action = Arriving(this)
@@ -25,7 +26,7 @@ class Airplane(val game: GameState, val id: Int):
     location = location + Coord((speed * math.sin(bearing.value.toDouble.toRadians)).toInt, -(speed * math.cos(bearing.value.toDouble.toRadians)).toInt)
 
   def slowSpeed() =
-    speed = 2.5
+    speed = 2
 
   def cruiseSpeed() =
     speed = 3

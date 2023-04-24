@@ -7,6 +7,7 @@ import scala.util.Random
 trait Action(plane: Airplane):
   val coordPerTile = plane.game.coordPerTile
   val runwayActions: Vector[String] = Vector("Landing", "Expediting", "TakingOff")
+  var boarded = false
 
   def overlappingRunwayPlaneWith(thisPlane: Airplane) =
     (plane.game.airplanesOnMap ++ plane.game.crashedPlanes)
@@ -17,52 +18,84 @@ trait Action(plane: Airplane):
 
 
 class Arriving(plane: Airplane) extends Action(plane): //puts plane on map
-  var toArrive = 15
+  private val toArrive = 15
+  private var timer = 0
 
   def execute() =
     //println(s"Plane ${plane.id}, arriving in $toArrive")
-    if toArrive == 0 then
+    timer += 1
+    if toArrive == timer then
+      plane.game.newArrivalMessage("Plane #" + plane.id + " requesting permission to land\n")
       plane.action = GoingToRunway(plane, plane.game.grid.runways(Random.nextInt(plane.game.grid.numberOfRunways)))
       plane.location = Coord(Random.nextInt(plane.game.width * coordPerTile), 0) //TODO fix
       val indexInArriving =
         plane.game.airplanesToArrive.zipWithIndex.filter( _._1.id == plane.id ).head._2
       plane.game.airplanesToArrive.remove(indexInArriving)
       plane.game.airplanesOnMap.append(plane)
-    else
-      toArrive -= 1
+    if toArrive - timer == 5 then
+      plane.game.newArrivalMessage("Plane #" + plane.id + " arriving in 5\n")
+
 
 
 class GoingToRunway(plane: Airplane, runway: Runway) extends Action(plane):
-  val target: Coord = runway.start.toCoord(coordPerTile)
+  private val runwayStart: Coord = runway.start.toCoord(coordPerTile)
+  private val entryPoint: Coord = (runway.start - runway.direction - runway.direction).toCoord(coordPerTile)
+  private val orientationPoint: Coord = (runway.start - runway.direction - runway.direction + runway.parallelDirection + runway.parallelDirection).toCoord(coordPerTile)
+  private val initalTarget: Coord =
+    if math.abs(plane.location.bearingTo(runwayStart) - plane.bearing.value) < 90 then
+      entryPoint
+    else
+      orientationPoint
+  private var oriented = false
+  private var clearedForEntry = false
+
+  def conditionToOrient: Boolean =
+    math.abs(plane.location.x - orientationPoint.x) < 15 && math.abs(plane.location.y - orientationPoint.y) < 15
+
+  def conditionToEntry: Boolean =
+    math.abs(plane.location.x - entryPoint.x) < 15 && math.abs(plane.location.y - entryPoint.y) < 15
 
   override def toString: String = "Going to Runway #" + runway.index
 
-  def execute() =
-    //println(s"Plane ${plane.id}, at ${plane.location}")
-    //println(plane.action.getClass.getTypeName)
-    plane.fuel -= 0.2
-    //if on target:
-    if math.abs(plane.location.x - target.x) < 15 && math.abs(plane.location.y - target.y) < 15 then
-      plane.location = target
-      plane.action = Landing(plane, runway)
-      plane.bearing = Degrees(runway.direction.bearing)
-      return
-    val bearingToRunway = plane.location.bearingTo(target)
-    val bearingToRunwayDiff: Int = math.abs(plane.location.bearingTo(target) - plane.bearing.value)
+  def goToPoint(target: Coord) =
+    val bearingToTarget = plane.location.bearingTo(target)
+    val bearingToTargetDiff: Int = math.abs(plane.location.bearingTo(target) - plane.bearing.value)
     //how much to turn algo:
     val toTurn =
-      if bearingToRunwayDiff <= 180 then
-        (plane.maxTurn * (bearingToRunwayDiff.toDouble / 180)).ceil.toInt
+      if bearingToTargetDiff <= 180 then
+        (plane.maxTurn * (bearingToTargetDiff.toDouble / 180)).ceil.toInt
       else
-        (plane.maxTurn * ((360 - bearingToRunwayDiff.toDouble) / 180)).ceil.toInt
+        (plane.maxTurn * ((360 - bearingToTargetDiff.toDouble) / 180)).ceil.toInt
     //where to turn algo:
-    if plane.bearing.value != bearingToRunway then
-      if plane.location.x < target.x && ((plane.bearing.value < bearingToRunway) || (360 - (180 - bearingToRunway) < plane.bearing.value)) then
+    if plane.bearing.value != bearingToTarget then
+      if plane.location.x < target.x && ((plane.bearing.value < bearingToTarget) || (360 - (180 - bearingToTarget) < plane.bearing.value)) then
         plane.bearing += toTurn
-      else if plane.location.x > target.x && (plane.bearing.value < bearingToRunway && plane.bearing.value > 180 - bearingToRunway) then
+      else if plane.location.x > target.x && (plane.bearing.value < bearingToTarget && plane.bearing.value > 180 - bearingToTarget) then
         plane.bearing += toTurn
       else
         plane.bearing -= toTurn
+
+  def execute() =
+    plane.fuel -= 0.2
+    //if on target:
+    if math.abs(plane.location.x - runwayStart.x) < 15 && math.abs(plane.location.y - runwayStart.y) < 15 then
+      plane.location = runwayStart
+      plane.action = Landing(plane, runway)
+      plane.bearing = Degrees(runway.direction.bearing)
+    else if clearedForEntry then
+      goToPoint(runwayStart)
+    else if conditionToEntry && oriented then
+      clearedForEntry = true
+      goToPoint(runwayStart)
+    else if oriented then
+      goToPoint(entryPoint)
+    else if conditionToOrient then
+      oriented = true
+      goToPoint(entryPoint)
+    else
+      goToPoint(initalTarget)
+
+
     /*if bearingToTargetDiff > 0 && bearingToTargetDiff < 180 then
       plane.bearing += toTurn
     else
@@ -93,8 +126,8 @@ class CirclingRight(plane: Airplane) extends Action(plane):
 
 
 class Landing(plane: Airplane, runway: Runway) extends Action(plane):
-  val neededSpeed = 1
-  val originalSpeed = plane.speed
+  private val neededSpeed = 1
+  private val originalSpeed = plane.speed
 
   override def toString: String = "Landing at Runway #" + runway.index
 
@@ -105,7 +138,9 @@ class Landing(plane: Airplane, runway: Runway) extends Action(plane):
       plane.action = Crashed(plane)
       overlappingRunwayPlaneWith(plane).foreach(n => n.action = Crashed(n) )
     if plane.speed == neededSpeed && atEndOfRunway then //landed
-      plane.location = runway.arrivingWaitArea.toCoord(coordPerTile)
+      var whereDraw = runway.arrivingWaitArea
+      runway.airplanesWaitingForGate.foreach( n => whereDraw = whereDraw - runway.direction )
+      plane.location = whereDraw.toCoord(coordPerTile)
       plane.action = TaxiingToGate(plane)
       plane.speed = 0
     else if atEndOfRunway then //too fast at end
@@ -114,8 +149,8 @@ class Landing(plane: Airplane, runway: Runway) extends Action(plane):
       plane.speed = math.max(1, plane.speed - ((4.0 * 4 / (2 * plane.neededRunway * coordPerTile))))
 
 class Expediting(plane: Airplane) extends Action(plane):
-  var beenOffFor = 0
-  var isOff = false
+  private var beenOffFor = 0
+  private var isOff = false
 
   def execute(): Unit =
     if overlappingRunwayPlaneWith(plane).nonEmpty then //if overlapping plane
@@ -132,7 +167,7 @@ class Expediting(plane: Airplane) extends Action(plane):
 
 
 class Crashed(plane: Airplane) extends Action(plane):
-  var crashedFor = 0
+  private var crashedFor = 0
 
   def execute() =
     if crashedFor == 0 then
@@ -148,12 +183,12 @@ class Crashed(plane: Airplane) extends Action(plane):
 
 
 class TaxiingToGate(plane: Airplane) extends Action(plane):
-  val timeToTaxi = 150
-  var timer = 0
-  var taxiing = false
-  var gate: Option[Gate] = None
+  private val timeToTaxi = 70
+  private var timer = 0
+  private var taxiing = false
+  private var gate: Option[Gate] = None
 
-  var description = "Waiting for free gate"
+  private var description = "Waiting for free gate"
 
   override def toString: String = description
 
@@ -175,24 +210,26 @@ class TaxiingToGate(plane: Airplane) extends Action(plane):
       plane.bearing = Degrees(0)
     else if taxiing then
       timer += 1
+      description = "Taxiing to gate, time left: " + (timeToTaxi - timer)
 
 
 class Boarding(plane: Airplane) extends Action(plane):
-  val timeToBoard = 150
-  var timer = 0
-  val tenPercent = timeToBoard / 10
+  private val timeToBoard = 100
+  private var timer = 0
+  private val tenPercent = timeToBoard / 10
   def percentiles = timer / tenPercent
 
-  val sharps = "|##########|"
-  val dots = "__________|"
-  val start = "Boarding, progress: "
-  var description = "Boarding, time to board: " + (timeToBoard - timer) + "\nProgress: " + sharps.head + dots
+  private val sharps = "|##########|"
+  private val dots = "__________|"
+  private val start = "Boarding, progress: "
+  private var description = "Boarding, time to board: " + (timeToBoard - timer) + "\nProgress: " + sharps.head + dots
 
   override def toString: String = description
 
   def execute() =
     if timer == timeToBoard then
       plane.fuel = plane.maxFuel
+      plane.game.newScore(plane.passengers + " passengers arrived.", 50)
       plane.action = Boarded(plane)
     else
       timer += 1
@@ -200,25 +237,27 @@ class Boarding(plane: Airplane) extends Action(plane):
       description = start + sharps.take(percentiles + 1) + dots.drop(percentiles)
 
 class Boarded(plane: Airplane) extends Action(plane):
-  var timer = 0
-  val description = "Boarded, awaiting order to taxi"
+  private var timer = 0
+  private val description = "Boarded, awaiting order to taxi"
   override def toString: String = description
 
   def execute() =
+    boarded = true
     timer += 1
 
 
 
 class TaxiingToRunway(plane: Airplane, runway: Runway) extends Action(plane):
-  val timeToTaxi = 150
-  var timer = 0
+  private val timeToTaxi = 70
+  private var timer = 0
 
-   override def toString: String = "Taxiing to runway #" + runway.index + ". Time left: " + (timeToTaxi - timer)
+  override def toString: String = "Taxiing to runway #" + runway.index + ". Time left: " + (timeToTaxi - timer)
 
   def execute() =
+    plane.game.grid.gates.filter( _.plane == Some(plane) ).foreach( _.plane = None )
     plane.location = Coord(-100, -100)
     if timer == timeToTaxi then
-      var whereToDraw = runway.departingWaitArea - runway.direction
+      var whereToDraw = runway.departingWaitArea
       runway.airplanesWaitingForTakeoff.foreach(n => whereToDraw = whereToDraw + runway.direction )
       plane.location = whereToDraw.toCoord(coordPerTile)
       plane.action = WaitingOnRunway(plane, runway)
@@ -226,22 +265,26 @@ class TaxiingToRunway(plane: Airplane, runway: Runway) extends Action(plane):
       timer += 1
 
 class WaitingOnRunway(plane: Airplane, runway: Runway) extends Action(plane):
-  var timer = 0
+  private var timer = 0
+
+  override def toString: String = "Waiting for permission to take off"
 
   def execute(): Unit =
     if timer == 0 then
-      runway.airplanesWaitingForTakeoff.enqueue(plane)
+      runway.airplanesWaitingForTakeoff.append(plane)
     timer += 1
 
 class TakingOff(plane: Airplane, runway: Runway) extends Action(plane):
-  val neededSpeed: Double = 3
-  var started = false
+  private val neededSpeed: Double = 3
+  private var started = false
+
+  override def toString: String = "Taking off"
 
   def execute() =
     if !started then
       plane.location = runway.start.toCoord(coordPerTile)
       plane.bearing = Degrees(runway.direction.bearing)
-      runway.airplanesWaitingForTakeoff.dequeue()
+      runway.airplanesWaitingForTakeoff.remove(runway.airplanesWaitingForTakeoff.indexOf(plane))
       runway.airplanesWaitingForTakeoff.foreach(n => n.location = (n.location.toGridPos(coordPerTile) - runway.direction).toCoord(coordPerTile) )
       started = true
     plane.fuel -= 0.2
@@ -258,8 +301,11 @@ class TakingOff(plane: Airplane, runway: Runway) extends Action(plane):
 
 class Leaving(plane: Airplane) extends Action(plane):
 
+  override def toString: String = "Leaving the airport"
+
   def execute() =
     if plane.location.x < 0 || plane.location.y < 0 || plane.location.x > plane.game.grid.coordSize._1 || plane.location.y > plane.game.grid.coordSize._2 then
+      plane.game.newScore("Plane left", 50)
       plane.game.airplanesOnMap.remove(plane.game.airplanesOnMap.indexOf(plane))
     plane.cruiseSpeed()
     plane.fuel -= 0.2
