@@ -115,3 +115,160 @@
       
       
       
+package airplaneGame
+
+import scala.math
+
+class test(var coord: (Int, Int)):
+  var vel = math.Pi / 4
+  var dir = 0.0
+  var speed = 100
+
+  def move() =
+    coord = (coord._1 + (math.sin(dir) * speed).toInt, coord._2 + (math.cos(dir) * speed).toInt)
+
+  def turn() =
+    dir = dir + vel
+
+
+
+@main def a() =
+  val a = test((0, 0))
+  a.move()
+  a.turn()
+  a.move()
+  println(a.coord)
+  println(a.dir)
+
+
+package airplaneGame
+
+import java.awt.Image
+import java.io.File
+import javax.imageio.ImageIO
+import javax.swing.ImageIcon
+
+object AllTiles: //depreceated
+
+  def readScaledImage(filename: String): ImageIcon =
+    ImageIcon(ImageIO.read(File("./Tiles/" + filename)).getScaledInstance(AirplaneGame.coordPerGridPos, AirplaneGame.coordPerGridPos, Image.SCALE_DEFAULT))
+
+  val filenames = File("./Tiles").list
+
+  def stripEnding(s: String) = s.takeWhile(_ != '.')
+
+  lazy val allStrings    = filenames.map(stripEnding(_))
+  lazy val images        = filenames.map(name => (stripEnding(name), readScaledImage(name))).toMap
+
+
+  def neighborOption(direction: CompassDir, gridSize: (Int, Int)): Option[GridPos] =
+    val neighborPos = GridPos(x + direction.xStep, y + direction.yStep)
+    if neighborPos.x > (gridSize._1 - 1) || neighborPos.x < 0 || neighborPos.y > (gridSize._2 - 1) || neighborPos.y < 0
+      then None
+    else
+      Some(neighborPos)
+
+  def neighbors(gridSize: (Int, Int)): Array[GridPos] =
+    val res = Buffer.empty[Option[GridPos]]
+    res.append(neighborOption(CompassDir.North, gridSize))
+    res.append(neighborOption(CompassDir.East, gridSize))
+    res.append(neighborOption(CompassDir.South, gridSize))
+    res.append(neighborOption(CompassDir.West, gridSize))
+    res.flatten.toArray
+
+package airplaneGame
+
+import scala.io.StdIn.readInt
+
+/* @main def generationTest() =
+  val world = Grid(15, 15)
+  var collapsed = 0
+  while world.currentGrid.flatten.map( _.tile ).contains( None ) do
+    world.collapseOne()
+    collapsed += 1
+  val printable = world.currentGrid.map( _.map( n => AllTiles.ascii(n.tile.getOrElse("nothing")) ) )
+
+  printable.foreach( n => println(n.mkString(",")) )
+  println(collapsed)
+  println(world.numberOfRunways)
+  println(world.runways.length)
+
+
+*/
+
+
+@main def generationTest() =
+  val game = GameState(15, 15, 3, 60)
+  val world = game.grid
+  world.generate(4, (3, 3), Vector(3, 4))
+
+  val printable = world.currentGrid.map( _.map( n => n.tile.getOrElse("********") ) )
+
+  printable.foreach( n => println(n.mkString(",")) )
+  world.runways.foreach( n => println(s"Start: ${n.start}, end: ${n.end}, ${n.direction}") )
+
+  (1 to 20).foreach( n => game.tick() )
+  (1 to 150).foreach( n => game.tick() )
+
+
+  def renderable: Vector[String] =
+    currentGrid.flatten.map( n => n.tile.getOrElse("grounddd") )
+
+
+  def collapseOne() =
+    val best  = currentGrid.flatten
+      .filter(_.tile.isEmpty)
+      .minByOption(_.entropy)
+
+    best.foreach( _.collapse() )
+
+case class Neighbor(mine: Int, dir: CompassDir, theirs: Int)
+
+val neighborBoundaries = Vector(
+    Neighbor(0, West,  2),
+    Neighbor(0, North, 6),
+    Neighbor(1, North, 5),
+    Neighbor(2, North, 4),
+    Neighbor(2, East,  0),
+    Neighbor(3, East,  7),
+    Neighbor(4, East,  6),
+    Neighbor(4, South, 2),
+    Neighbor(5, South, 1),
+    Neighbor(6, South, 0),
+    Neighbor(6, West,  4),
+    Neighbor(7, West,  3),
+)
+*/
+
+
+  //game.grid.runways.foreach( n => println(n.start) )
+  //game.grid.currentGrid.flatten.filter( _.tile.contains("S"
+
+  /*val drawableGrid = new GridPanel(gridSizeX, gridSizeY):
+    game.grid.renderable
+      .map( tile => new Label{icon = AllTiles.images(tile)} )
+      .foreach( contents += _ )*/
+      
+      
+  /*var textPanel = new BoxPanel(Orientation.Vertical):
+    preferredSize = new Dimension(100, gridSizeY * coordPerGridPos)
+    contents += new Label("Location: ")
+    contents += new Label("Bearing: ")
+    contents += new Label("Speed: ")
+    contents += new Label("Fuel: ")
+    contents += new Label("Origin: ")
+    contents += new Label("Action: ")
+
+  def updateTextPanel(planeToDisplay: Option[Airplane]): Unit =
+    textPanel = new BoxPanel(Orientation.Vertical):
+      preferredSize = new Dimension(100, gridSizeY * coordPerGridPos)
+    if planeToDisplay.isDefined then
+      println("updated")
+      val plane = planeToDisplay.get
+      textPanel.contents += new Label("Location: " + plane.location)
+      textPanel.contents += new Label("Bearing: " + plane.bearing)
+      textPanel.contents += new Label("Speed: " + plane.speed)
+      textPanel.contents += new Label("Fuel: " + plane.fuel)
+      textPanel.contents += new Label("Origin: " + plane.origin)
+      textPanel.contents += new Label("Needed runway: " + plane.neededRunway)
+      textPanel.contents += new Label("Action: " + plane.action)*/

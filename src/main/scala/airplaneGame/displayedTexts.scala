@@ -1,5 +1,7 @@
 package airplaneGame
 
+//classes for forming decriptions and other texts of in-game objects. Created when text is neeed. Need the object as parameter 
+
 class PlaneTextToDisplay(maybePlane: Option[Airplane]):
 
   val text: String =
@@ -53,5 +55,6 @@ class AirportInfo(game: GameState):
     game.latestScoreMessage
 
 
+//Vector of plane origins for plane generation
 val smallOrigins = Vector("Helsinki", "Lappeenranta", "Takapajula", "Paris", "Budapest", "London", "Tallin", "Amsterdam", "Oslo", "Tripoli", "Korvatunturi")
 val bigOrigins = Vector("Paris", "Budapest", "London", "New York", "Chicago", "Tokyo", "Singapore", "Los Angeles", "Metropolis", "Moon", "Buenos Aires", "Bogota", "Lagos", "Cairo", "Sydney")
