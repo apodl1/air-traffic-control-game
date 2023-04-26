@@ -30,10 +30,10 @@ class PlaneTextToDisplay(maybePlane: Option[Airplane]):
 class ArrivingPlaneMessage(plane: Airplane):
 
   val message: String =
-    "Plane #" + plane.id + ", from: " + plane.origin +
-    "\nModel:" + plane.model
+    "Arriving: Plane #" + plane.id + " from: " + plane.origin +
+    "\nModel: " + plane.model +
     "\nPassengers: " + plane.passengers +
-    "\nTime to arrival: 15" +
+    "\nTime to arrival: 150" +
     "\nFuel on arrival: " + plane.fuel +
     "\n"
 
@@ -49,10 +49,10 @@ class AirportInfo(game: GameState):
       "Plane #" + gate.plane.get.id + " boarding"
 
   val text: String =
-    game.grid.runways.map( n => "Runway #" + n.index + ": Available").mkString("\n") + "\n\n" +
+    game.grid.runways.map( n => "Runway #" + n.index + " of length " + n.length + ": Available").mkString("\n") + "\n\n" +
     game.grid.gates.map( n => "Gate #" + n.index + ": " + gateStatus(n)).mkString("\n") +
     "\n\nScore: " + game.score + "\n" +
-    game.latestScoreMessage
+    "Latest event: " + game.latestScoreMessage
 
 
 //Vector of plane origins for plane generation

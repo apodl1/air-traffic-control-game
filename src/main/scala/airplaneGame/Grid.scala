@@ -40,8 +40,10 @@ class Grid(val width: Int, val height: Int, bufferSize: Int, val coordPerTile: I
   def generate(runways: Int, terminalSize: (Int, Int), runwayLengths: Vector[Int]): Unit =
     //first place terminal
     placeTerminal(terminalSize._1, terminalSize._2)
-    //then place runways-number of runways of lengths passed in runwayLengths
-    (1 to runways).foreach(n =>
+    //place at least one long runway
+    placeRunwayHorizontal(runwayLengths.max)
+    //then place number of runways of lengths passed in runwayLengths
+    (1 until runways).foreach(n =>
       if Random.nextInt(2) == 0 then
         placeRunwayHorizontal(runwayLengths(Random.nextInt(runwayLengths.length)))
       else

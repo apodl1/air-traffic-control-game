@@ -21,19 +21,16 @@ class GameState(val width: Int, val height: Int, val bufferSize: Int, val coordP
     score += points
     latestScoreMessage = message + "\nPoints awarded: " + points + "!\n"
 
-  //for displaying arrival info
+  //for displaying arrival info 
   def newArrivalMessage(message: String) =
     arrivingMessages.enqueue(message)
-    if arrivingMessages.length > 3 then
+    if arrivingMessages.length > 6 then
       arrivingMessages.dequeue()
 
-  private var clock = 0
-
-  private var sinceNewAirplane = 0
+  private var sinceNewAirplane = 150
 
   //called by GUI when time advances
   def tick(): Unit =
-    clock += 1
     sinceNewAirplane += 1
 
     (airplanesToArrive ++ airplanesOnMap ++ crashedPlanes).foreach( _.action.execute() )
@@ -41,13 +38,13 @@ class GameState(val width: Int, val height: Int, val bufferSize: Int, val coordP
     airplanesOnMap.filter( _.fuel < 0 ).foreach( n => n.action = Crashed(n) ) //crashes the plane if it is out of fuel
 
     //spawns new planes
-    if sinceNewAirplane == 10 && airplanesOnMap.length < 2 then
+    if sinceNewAirplane == 200 && airplanesOnMap.length < 18 then
       planeIndexes += 1
       val plane =
         val random = Random.nextInt(3)
         if random == 0 then
           SmallPlane(this, planeIndexes)
-        if random == 1 then
+        else if random == 1 then
           MediumPlane(this, planeIndexes)
         else
           BigPlane(this, planeIndexes)

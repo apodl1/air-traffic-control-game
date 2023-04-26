@@ -33,7 +33,7 @@ class Runway(val index: Int, val start: GridPos, val end: GridPos):
       
   //length of runway
   val length =
-    math.abs(start.x - end.x) + math.abs(start.y - end.y)
+    math.abs(start.x - end.x) + math.abs(start.y - end.y) + 1
     
   //location of airplane wait areas. Same principle as parallelDirection
   val arrivingWaitArea: GridPos =

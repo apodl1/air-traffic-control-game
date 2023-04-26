@@ -15,15 +15,52 @@ import scala.concurrent.ExecutionContext.Implicits.global
 //main application
 object AirplaneGame extends SimpleSwingApplication:
 
-  //contants
-  val gridSizeX = 18 //TODO min values
+  def showStartMessage(): Unit =
+    Dialog.showMessage(
+      title = "Welcome",
+      message = "Welcome to the Air Traffic Controller game." +
+        "\nIn this game you will be required to manage the arrivals and departures of an airport. You can do this by electing planes with the left mouse button, and either directing them to runways by clicking the runway start" +
+        "\nor by using the buttons in the right sidebar. The planes may collide on the runway or run out of fuel, which will caue a crash. A crash ends the game." +
+        "\nBe also aware of the planes needed runway. This is the runway a plane needs to land at full speed. Lower speeds may allow for shorter lanings, but you can not be sure of that." +
+        "\nYou also cannot take off a plane from a too short runway." +
+        "\nThe planes will land and go to gates automatically, but you may need to redirect them on the way. Player input is also required after the plane has boarded and for the takeoff." +
+        "\nPoints are awarded for arrived and departed passengers. Good luck!" +
+        "\nPS. The pilots are very careful, give them time to land and redirect them if they get confused.",
+    )
+
+  def getRunways: Int =
+    val result = Dialog.showInput(
+      title = "Number of runways",
+      message = "Enter number of runways as a single int from 1 to 5 (less is harder):",
+      initial = ""
+    )
+    if result.getOrElse("").toIntOption.isEmpty || result.getOrElse("").toIntOption.forall( n => n < 1 || n > 5 ) then
+      getRunways
+    else
+      result.get.toInt
+
+  def getGates: Int =
+    val result = Dialog.showInput(
+      title = "Number of gates",
+      message = "Enter number of gates as a single int from 1 to 7 (less is harder):",
+      initial = ""
+    )
+    if result.getOrElse("").toIntOption.isEmpty || result.getOrElse("").toIntOption.forall( n => n < 1 || n > 7 ) then
+      getGates
+    else
+      result.get.toInt
+
+  showStartMessage()
+
+  //constants
+  val gridSizeX = 24
   val gridSizeY = 18
   val bufferSize = 3
   val coordPerGridPos = 40
 
-  val numberOfRunways = 2 //min (suggested) value: 1
-  val terminalSize = (6, 5) //min value: (3, 3)
-  val runwayLengths = Vector(5, 6) //min value: 3
+  val numberOfRunways = getRunways //min (suggested) value: 1
+  val terminalSize = (getGates + 2, 3) //min value: (3, 3)
+  val runwayLengths = Vector(6, 5, 3) //min value: 3
 
   val planeSize = (30, 30)
 
@@ -123,7 +160,7 @@ object AirplaneGame extends SimpleSwingApplication:
         else if possibleRunway.isEmpty then
           //if possiblePlane defined, select the plane
           possiblePlane.foreach( n => selectedPlane = Some(n))
-        else if selectedPlane.forall( n => isFlyingAction(n.action.getClass.getTypeName) ) then //weakness
+        else if selectedPlane.forall( n => isFlyingAction(n.action.getClass.getTypeName) ) then
           //if possiblePlane is doing a flying action (eg. goingToRunway or Circling) and possibleRunway is defined, set the plane to go to the runway
           selectedPlane.foreach( _.action = GoingToRunway(selectedPlane.get, possibleRunway.get) )
         //put the info of selectedPlane into the planeInfo box (that gets put into the right sidebar). PlaneTextToDisplay handles None-case
@@ -167,7 +204,7 @@ object AirplaneGame extends SimpleSwingApplication:
       def apply() =
         (selectedPlane.foreach( n => n.action = TakingOff(n, game.grid.runways.filter( m => m.airplanesWaitingForTakeoff.contains(n) ).head) ))
 
-  //textbox for righ-sidebar
+  //textbox for right-sidebar
   val planeInfo = new TextArea(15, 100):
     maximumSize = new Dimension(150, 300)
     editable = false
@@ -235,7 +272,7 @@ object AirplaneGame extends SimpleSwingApplication:
 
   //textbox for left-sidebar
   val arrivingInfo = new TextArea(15, 100):
-    maximumSize = new Dimension(150, 300)
+    maximumSize = new Dimension(150, 200)
     editable = false
     wordWrap = true
     lineWrap = true
@@ -244,8 +281,7 @@ object AirplaneGame extends SimpleSwingApplication:
   arrivingInfo.text = game.arrivingMessages.mkString("\n")
 
   //textbox for left-sidebar
-  val airportInfo = new TextArea(15, 100):
-    maximumSize = new Dimension(150, 300)
+  val airportInfo = new TextArea(20, 100):
     editable = false
     wordWrap = true
     lineWrap = true
