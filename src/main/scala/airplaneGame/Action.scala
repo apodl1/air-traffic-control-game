@@ -321,7 +321,7 @@ class TakingOff(plane: Airplane, runway: Runway) extends Action(plane):
       plane.action = Crashed(plane)
       overlappingRunwayPlaneWith(plane).foreach(n => n.action = Crashed(n) )
     if plane.location.toGridPos(coordPerTile).isSameAs(runway.end + runway.direction) then //if at end of runway
-      if plane.neededRunway < runway.length then //if runway too short -> crash
+      if plane.neededRunway > runway.length then //if runway too short -> crash
         plane.action = Crashed(plane)
       else //else -> leave
         plane.action = Leaving(plane)
