@@ -25,7 +25,7 @@ object AirplaneGame extends SimpleSwingApplication:
         "\nYou also cannot take off a plane from a runway shorter than the needed one." +
         "\nThe planes spawn heading to a random runway, but you may need to redirect elewhere. Planes land on the directed runway and go to a gate automatically, but teh player has to direct them to take off after the plane has boarded." +
         "\nPoints are awarded for arrived and departed passengers. Good luck!" +
-        "\nPS. The pilots are a bit green, so they may fail to land at the first try or even get stuck in a circle. Redirect them if necessary.",
+        "\nPS. The pilots are a bit green, so they may fail to land at the first try or even get stuck in a circle. Redirect them if necessary. Slowing a plane down also helps with turn speed.",
     )
 
   def getRunways: Int =
