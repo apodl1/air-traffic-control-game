@@ -5,11 +5,11 @@ import scala.math
 
 trait Airplane(val game: GameState, val id: Int):
 
-  val model: String //implimented by classes of different plane types
+  val model: String //implemented by classes of different plane types
   val maxTurn: Int
   val neededRunway: Int
   val startFuel: Double
-  var fuel: Double //update by Action-classes of flying planes
+  var fuel: Double //updated by Action-classes of flying planes
   val origin: String
   var passengers: Int
   val fuelConsumption = 0.2
@@ -26,12 +26,11 @@ trait Airplane(val game: GameState, val id: Int):
   def move() = //called by game-state on every tick for every plane
     location = location + Coord((speed * math.sin(bearing.value.toDouble.toRadians)).toInt, -(speed * math.cos(bearing.value.toDouble.toRadians)).toInt)
 
-  def slowSpeed() = //called by GUI buttons
+  //called by GUI buttons
+  def slowSpeed() =
     speed = 2
-
   def cruiseSpeed() =
     speed = 3
-
   def fastSpeed() =
     speed = 4
 

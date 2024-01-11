@@ -18,14 +18,14 @@ object AirplaneGame extends SimpleSwingApplication:
   def showStartMessage(): Unit =
     Dialog.showMessage(
       title = "Welcome",
-      message = "Welcome to the Air Traffic Controller game." +
-        "\nIn this game you will be required to manage the arrivals and departures of an airport. You can do this by electing planes with the left mouse button, and either directing them to runways by clicking the runway start" +
-        "\nor by using the buttons in the right sidebar. The planes may collide on the runway or run out of fuel, which will caue a crash. A crash ends the game." +
-        "\nBe also aware of the planes needed runway. This is the runway a plane needs to land at full speed. Lower speeds may allow for shorter lanings, but you can not be sure of that." +
-        "\nYou also cannot take off a plane from a too short runway." +
-        "\nThe planes will land and go to gates automatically, but you may need to redirect them on the way. Player input is also required after the plane has boarded and for the takeoff." +
+      message = "Welcome to the Air Traffic Controller-game." +
+        "\nIn this game you will be required to manage the arrivals and departures of an airport. You can do this by selecting planes with the left mouse button, and either directing them to runways by clicking the runway start" +
+        "\nor by using the buttons in the right sidebar. The planes may collide on the runway or run out of fuel, which will cause a crash. A crash ends the game." +
+        "\nBe also aware of the planes needed runway. This is the runway length a plane needs to land at full speed. Lower speeds may allow for shorter landings, but you can't be sure of that." +
+        "\nYou also cannot take off a plane from a runway shorter than the needed one." +
+        "\nThe planes spawn heading to a random runway, but you may need to redirect elewhere. Planes land on the directed runway and go to a gate automatically, but teh player has to direct them to take off after the plane has boarded." +
         "\nPoints are awarded for arrived and departed passengers. Good luck!" +
-        "\nPS. The pilots are very careful, give them time to land and redirect them if they get confused.",
+        "\nPS. The pilots are a bit green, so they may fail to land at the first try or even get stuck in a circle. Redirect them if nesessary.",
     )
 
   def getRunways: Int =
@@ -111,24 +111,23 @@ object AirplaneGame extends SimpleSwingApplication:
     newPlaneImageG.dispose()
     newPlaneImage
 
-  //draws planes to new grid image
+  //draws planes to a new grid image
   def drawPlanes(): Unit =
       planesOnMap = getNewGridImage
       val g = planesOnMap.getGraphics.asInstanceOf[Graphics2D]
-      //loops through GameStates buffers
+      //loops through GameState-buffers
       game.airplanesOnMap.foreach( n => g.drawImage(getTurnedPlane(n.bearing.value, n.model), n.location.x - planeSize._1 / 2, n.location.y - planeSize._2 / 2, null) )
       game.crashedPlanes.foreach( n => g.drawImage(crashedImage, n.location.x, n.location.y, null) )
-      //draws a red ellipse around selected plane (if it is defined)
+      //draws a red ellipse around selected plane (if it exists)
       g.setColor(RED)
       selectedPlane.foreach( n => g.draw(Ellipse2D.Double(n.location.x - planeSize._1 / 2 - 5, n.location.y - planeSize._2 / 2 - 5, 40, 40)) )
-      //selectedPlane.foreach( n => g.draw(Ellipse2D.Double(n.location.x - planeSize._1 / 2 - 5, n.location.y - planeSize._2 / 2 - 5, 40, 40)) )
       g.dispose()
   end drawPlanes
 
-  //var to store selected plane if defined
+  //var to store selected plane (can be None)
   var selectedPlane: Option[Airplane] = None
 
-  //vers to store mouse positions
+  //vars to store mouse positions
   var mouseX = 0
   var mouseY = 0
 
@@ -136,7 +135,7 @@ object AirplaneGame extends SimpleSwingApplication:
   val mapPanel = new Panel:
     preferredSize = new Dimension(gridSizeX * coordPerGridPos, gridSizeY * coordPerGridPos)
     override def paintComponent(g: Graphics2D): Unit =
-      super.paintComponent(g) //TODO what
+      super.paintComponent(g)
       g.drawImage(planesOnMap, 0, 0, null)
 
     //panel listens to mouse
@@ -144,7 +143,7 @@ object AirplaneGame extends SimpleSwingApplication:
     this.listenTo(mouse.clicks)
 
     this.reactions += {
-      //records mosue moves and coordiantes to vars
+      //records mouse moves and coordiantes to vars
       case event.MouseMoved(_, point: java.awt.Point, _) =>
         mouseX = point.x
         mouseY = point.y
@@ -155,7 +154,7 @@ object AirplaneGame extends SimpleSwingApplication:
         val possiblePlane = game.planeAtCoord(clickCoord)
         val possibleRunway = game.runwayAtCoord(clickCoord)
         if possiblePlane.isEmpty && possibleRunway.isEmpty then
-          //if both none, empty the selectedPlane
+          //if both None, empty the selectedPlane
           selectedPlane = None
         else if possibleRunway.isEmpty then
           //if possiblePlane defined, select the plane
@@ -169,7 +168,7 @@ object AirplaneGame extends SimpleSwingApplication:
   end mapPanel
 
   //definitions for right-sidebar buttons, filtering for display done later
-  val buttonDim = Dimension(30, 10) //TODO
+  val buttonDim = Dimension(30, 10)
   val slowButton = new Button("Slow speed"):
     maximumSize = buttonDim
     action = new Action("Slow speed"):
@@ -219,7 +218,7 @@ object AirplaneGame extends SimpleSwingApplication:
     preferredSize = new Dimension(150, gridSizeY * coordPerGridPos)
     contents += planeInfo
   
-  //vecort for actions that are considered flying
+  //vector for actions that are considered flying
   val flyingActions: Vector[String] = Vector("GoingToRunway", "CirclingLeft", "CirclingRight")
 
   //helper functions for checking states of the aricraft
@@ -301,7 +300,7 @@ object AirplaneGame extends SimpleSwingApplication:
     contents += Swing.VStrut(10)
     contents += airportInfo
 
-  //the panel combining all teh pervious panels into final version
+  //the panel combining all the pervious panels into final version
   val combinationPanel = new BoxPanel(Orientation.Horizontal):
     contents += leftPanel
     contents += mapPanel

@@ -7,7 +7,7 @@ import scala.collection.mutable.ArrayBuffer
 import scala.swing.Dialog
 
 
-//all classes derive from Action-trait, which provides the interface. The calss names are also used by GUI, to determine the state of the aircraft
+//all classes derive from Action-trait, which provides the interface. The class names are also used by GUI, to determine the state of the aircraft
 trait Action(plane: Airplane):
   val coordPerTile = plane.game.coordPerTile //shorthand
   val runwayActions: Vector[String] = Vector("Landing", "Expediting", "TakingOff") //actions which happen on the runway
@@ -19,7 +19,7 @@ trait Action(plane: Airplane):
       .filter(n => n != thisPlane && runwayActions.exists(m => n.action.getClass.getTypeName.contains(m)))
       .filter(n => 5 > math.abs(plane.location.x - n.location.x + (plane.location.y - n.location.y)))
 
-  //implimented by classes
+  //implemented by classes, defines what the action does
   def execute(): Unit
 
 //puts plane on the map after set time
@@ -29,7 +29,6 @@ class Arriving(plane: Airplane) extends Action(plane):
   private var printed = false
 
   def execute() =
-    //println(s"Plane ${plane.id}, arriving in $toArrive")
     timer += 1
     if toArrive == timer then //go to map
       plane.game.newArrivalMessage("Plane #" + plane.id + " requesting permission to land\n")
@@ -157,9 +156,9 @@ class Landing(plane: Airplane, runway: Runway) extends Action(plane):
       plane.location = whereDraw.toCoord(coordPerTile)
       plane.action = TaxiingToGate(plane)
       plane.speed = 0
-    else if atEndOfRunway then //if too fast at end of runway (an not upposed to land) -> crash
+    else if atEndOfRunway then //if too fast at end of runway -> crash
       plane.action = Crashed(plane)
-    if plane.speed > neededSpeed then //if not at required speed -> brake amount derived from max speed and needed runway, up to needed speed
+    if plane.speed > neededSpeed then //if not yet at required speed -> brake amount derived from max speed and needed runway, up to needed speed
       plane.speed = math.max(neededSpeed, plane.speed - ((plane.maxSpeed * plane.maxSpeed / (2 * plane.neededRunway * coordPerTile))))
 
 //take off while landing
@@ -173,9 +172,9 @@ class Expediting(plane: Airplane) extends Action(plane):
       overlappingRunwayPlaneWith(plane).foreach(n => n.action = Crashed(n) )
     if plane.speed > 3 then //-> when at sufficient speed -> set flag
       isOff = true
-    if isOff then //if flag -> avance timer
+    if isOff then //if flag -> advance timer
       beenOffFor += 1
-    if beenOffFor > 40 then //if timer ifficiently advanced -> circle
+    if beenOffFor > 40 then //far enough -> circle
       plane.action = CirclingLeft(plane)
     if !isOff then //otherwise accelerate
       plane.speed += 0.2
@@ -192,7 +191,7 @@ class Crashed(plane: Airplane) extends Action(plane):
     )
 
   def execute() =
-    if crashedFor == 0 then //when just introduced, change the status of plane in gameState
+    if crashedFor == 0 then //when just crashed, change the status of plane in gameState
       if plane.game.airplanesOnMap.lift(plane.game.airplanesOnMap.zipWithIndex.filter( _._1.id == plane.id ).head._2).isDefined && plane.game.airplanesOnMap.zipWithIndex.exists(_._1.id == plane.id) then
         plane.game.airplanesOnMap.remove(plane.game.airplanesOnMap.zipWithIndex.filter( _._1.id == plane.id ).head._2)
       plane.game.crashedPlanes.enqueue(plane)
@@ -222,7 +221,7 @@ class TaxiingToGate(plane: Airplane) extends Action(plane):
     plane.location = Coord(-1000, -1000) //move outside map
 
   def execute() =
-    if !taxiing && !plane.game.grid.gates.forall( _.plane.isDefined ) then //if not taxiing and if space at gates -> start taxiing, otherwise does nothing
+    if !taxiing && !plane.game.grid.gates.forall( _.plane.isDefined ) then //if not taxiing and if free space at gates -> start taxiing, otherwise does nothing
       plane.game.grid.runways.filter( _.airplanesWaitingForGate.contains(plane) ).foreach( _.airplanesWaitingForGate.dequeue() )
       val gateToAssign = plane.game.grid.gates.filter( _.plane.isEmpty ).head
       gateToAssign.plane = Some(plane)
@@ -287,7 +286,7 @@ class TaxiingToRunway(plane: Airplane, runway: Runway) extends Action(plane):
     plane.location = Coord(-1000, -1000) //goes outside the map
     if timer == timeToTaxi then //if sufficient time -> change action and update location
       var whereToDraw = runway.departingWaitArea
-      runway.airplanesWaitingForTakeoff.foreach(n => whereToDraw = whereToDraw + runway.direction ) //changes the location depending on the runways awaiting planes
+      runway.airplanesWaitingForTakeoff.foreach(n => whereToDraw = whereToDraw + runway.direction ) //changes the location depending on the runway's awaiting planes
       plane.location = whereToDraw.toCoord(coordPerTile)
       plane.action = WaitingOnRunway(plane, runway)
     else
@@ -299,7 +298,7 @@ class WaitingOnRunway(plane: Airplane, runway: Runway) extends Action(plane):
   override def toString: String = "Waiting for permission to take off"
 
   def execute(): Unit =
-    if timer == 0 then //if jut initialized, add to runway array. Otherwise do nothing
+    if timer == 0 then //if just initialized, add to runway's array. Otherwise do nothing
       runway.airplanesWaitingForTakeoff.append(plane)
     timer += 1
 
@@ -310,7 +309,7 @@ class TakingOff(plane: Airplane, runway: Runway) extends Action(plane):
   override def toString: String = "Taking off"
 
   def execute() =
-    if !started then //initialize on firt pass, set location, remove from buffer and move othe rwaiting planes
+    if !started then //initialize on firt pass, set location, remove from buffer and move other waiting planes
       plane.location = runway.start.toCoord(coordPerTile)
       plane.bearing = Degrees(runway.direction.bearing)
       runway.airplanesWaitingForTakeoff.remove(runway.airplanesWaitingForTakeoff.indexOf(plane))

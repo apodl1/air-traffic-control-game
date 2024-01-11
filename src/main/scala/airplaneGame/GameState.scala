@@ -3,8 +3,8 @@ package airplaneGame
 import scala.collection.mutable.{ArrayBuffer, Queue}
 import scala.util.Random
 
-//the central class unifying part into a game. The main interface between backend and GUI
-class GameState(val width: Int, val height: Int, val bufferSize: Int, val coordPerTile: Int):  //placeholder class
+//the central state-class unifying parts into a game. The main interface between backend and GUI
+class GameState(val width: Int, val height: Int, val bufferSize: Int, val coordPerTile: Int):
   
   val grid = Grid(width, height, bufferSize, coordPerTile)
   private var planeIndexes = 0

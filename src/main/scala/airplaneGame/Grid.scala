@@ -4,7 +4,7 @@ import CompassDir.{East, North, South, West}
 import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
 
-//a crucial class for representing and generating the game map, gets relevant info as parameters
+//a class for representing and generating the game map, gets relevant info as parameters
 class Grid(val width: Int, val height: Int, bufferSize: Int, val coordPerTile: Int):
 
   val size = (width, height)
@@ -15,7 +15,7 @@ class Grid(val width: Int, val height: Int, bufferSize: Int, val coordPerTile: I
   val gates = ArrayBuffer.empty[Gate]
   def numberOfGates = gates.length
 
-  //the grid itself is stored here, elements numbered as (y)(x) counting from top right -corner (as in scala swing GUI). Initialized empty (all squares set as None), filled by generate
+  //the grid itself is stored here, elements numbered as (y)(x) counting from top left -corner (as in scala swing GUI). Initialized empty (all squares set as None), filled by generate
   val currentGrid: Vector[Vector[Square]] =
     LazyList.iterate(0)(n => n + 1)
       .take(height)
@@ -36,7 +36,7 @@ class Grid(val width: Int, val height: Int, bufferSize: Int, val coordPerTile: I
   def nextNSquares(startPos: GridPos, direction: CompassDir, n: Int): Vector[Square] =
     LazyList.iterate(startPos + direction)( _ + direction).take(n).map( n => squareAt(n) ).toVector
 
-  //generates map based on given parameters, shoul donly be called once
+  //generates map based on given parameters, should only be called once
   def generate(runways: Int, terminalSize: (Int, Int), runwayLengths: Vector[Int]): Unit =
     //first place terminal
     placeTerminal(terminalSize._1, terminalSize._2)
@@ -52,7 +52,7 @@ class Grid(val width: Int, val height: Int, bufferSize: Int, val coordPerTile: I
 
   //helper for placing the terminal, called first in generate()
   def placeTerminal(terminalWidth: Int, terminalHeight: Int): Unit =
-    require(terminalWidth > 2 && terminalHeight > 2) //minimun size
+    require(terminalWidth > 2 && terminalHeight > 2) //minimum size
     //forms random GridPos for terminal top-left corner
     val xPos = Random.nextInt(width - (bufferSize - 2) * 2 - terminalWidth) + bufferSize - 1
     val yPos = Random.nextInt(height - (bufferSize - 2) * 2 - terminalHeight) + bufferSize - 1
@@ -104,7 +104,7 @@ class Grid(val width: Int, val height: Int, bufferSize: Int, val coordPerTile: I
         squareAt(edge1).tile = Some("runwaHEW")
         squareAt(edge2).tile = Some("runwaHSW")
 
-  //helper for placing a vertical runway, called third in generate(), follows same pattern as horizontal
+  //helper for placing a vertical runway, called third in generate(), follows the same pattern as horizontal
   def placeRunwayVertical(length: Int): Unit = //calledSecond
     require(length > 2) //minimum size
     //forms random GridPos for one edge of runway
@@ -137,7 +137,7 @@ class Grid(val width: Int, val height: Int, bufferSize: Int, val coordPerTile: I
         squareAt(edge2).tile = Some("runwaVSN")
 
 
-//enum for repreenting directions on the map, each direction represents one GridPos step. Also contains the bearing of the direction (angle from North)
+//enum for repreenting directions on the map, each direction represents one GridPos step. Also contains the bearing of the direction (clockwise angle from North)
 enum CompassDir(val xStep: Int, val yStep: Int, val bearing: Int) derives CanEqual:
 
   case North extends CompassDir( 0,-1, 0)

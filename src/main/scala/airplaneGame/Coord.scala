@@ -2,7 +2,7 @@ package airplaneGame
 
 import scala.math
 
-class Coord(val x: Int, val y: Int): //class for representing pixel coordiantes on the game map with helper functions. 1 pixel always == one Coord
+class Coord(val x: Int, val y: Int): //class for representing pixel coordinates on the game map with helper functions. 1 pixel always == one Coord
 
   override def toString: String = s"(${x}, ${y})"
 
@@ -10,7 +10,7 @@ class Coord(val x: Int, val y: Int): //class for representing pixel coordiantes 
   def toGridPos(coordPerTile: Int): GridPos =
     GridPos(x / coordPerTile, y / coordPerTile)
   
-  //used in pathfinding alorithm, finds the bearing by forming a right-angled triangle, calculating the angle near the calling Coord, and transforming the result to be in regars of North-direction 
+  //used in pathfinding algorithm, finds the bearing by forming a right-angled triangle, calculating the angle near the calling Coord, and transforming the result to be in regars of North-direction
   def bearingTo(target: Coord): Int = 
     //four main cases -> four different triangles, and four cases for handling x || y == target.x || y -situations
     if x < target.x && y < target.y then
@@ -32,6 +32,6 @@ class Coord(val x: Int, val y: Int): //class for representing pixel coordiantes 
       270
 
 
-  //helper for adding Coords
+  //helper for adding Coords together
   def +(that: Coord) =
     Coord(this.x + that.x, this.y + that.y)

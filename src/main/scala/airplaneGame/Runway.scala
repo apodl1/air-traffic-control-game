@@ -6,7 +6,7 @@ import scala.collection.mutable.{Queue, ArrayBuffer}
 //class representing a runway on the map, contains its index, start and end point and other derived information
 class Runway(val index: Int, val start: GridPos, val end: GridPos):
 
-  //direction of runway, computed by comparing coordiantes of start and end
+  //direction of runway, computed by comparing coordinates of start and end
   val direction: CompassDir =
     if start.x > end.x then
       West
@@ -20,7 +20,7 @@ class Runway(val index: Int, val start: GridPos, val end: GridPos):
   //generalized version of direction, returns true if runway is horizontal
   val isHorizontal = direction == East || direction == West
       
-  //returns a direction at a 90 degree angle to runways true direction. Is North for horizontals and East for verticals 
+  //returns a direction at a 90 degree angle to runway's true direction. Is North for horizontals and East for verticals 
   val parallelDirection =
     if start.x > end.x then
       North
@@ -50,4 +50,4 @@ class Runway(val index: Int, val start: GridPos, val end: GridPos):
       
   //mutable collections for storing relevant airplanes. Modified by Action-classes
   val airplanesWaitingForGate = Queue.empty[Airplane]
-  val airplanesWaitingForTakeoff = ArrayBuffer.empty[Airplane] //write about
+  val airplanesWaitingForTakeoff = ArrayBuffer.empty[Airplane]
