@@ -1,6 +1,7 @@
 A simple air traffic controller -game made from scratch with Scala and Swing. Only dependencies are Scala 3+ and Swing (latter included as .jar).
 
 Nearly all of the development was done in a single week.
+
 The game was made for a University course, in which the GUI was not a focus. As such the graphics are very basic. A graphical upgrade would however be easy to do, by substituting the .png:s in the Tiles-folder with new ones. 
 
 <picture>
