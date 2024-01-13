@@ -10,5 +10,5 @@ The game was made for a university course, in which the GUI was not a focus. As 
 </picture>
 <picture>
     <source srcset="https://github.com/apodl1/air-traffic-control-game/blob/main/Screenshot3.png">
-    <img alt="Screenshot" src="https://github.com/apodl1/air-traffic-control-game/blob/main/Screenshot1.png">
+    <img alt="Screenshot" src="https://github.com/apodl1/air-traffic-control-game/blob/main/Screenshot3.png">
 </picture>
